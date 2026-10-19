@@ -20,6 +20,7 @@ export interface State {
 export type SimulationEvent =
   | { type: 'move'; animal: Animal; to: Position }
   | { type: 'hunt'; animal: Animal; prey: Animal; energyAfter: number }
+  | { type: 'graze'; animal: Animal; cell: number; grass: number; energyAfter: number; afterDivision: boolean }
   | { type: 'birth'; parentId: number; animal: Animal; parentBefore: Animal; parentAfter: Animal; sourceCell: number }
   | { type: 'death'; animal: Animal };
 type Emit = (event: SimulationEvent) => void;
@@ -94,13 +95,15 @@ export function moveHerbivores(state: State, config: Config, random: Random, emi
 }
 
 export function feedHerbivores(state: State, config: Config, emit?: Emit): void {
-  for (const animal of active(state, 'herbivore')) consumeGrass(state, config, animal);
+  for (const animal of active(state, 'herbivore')) consumeGrass(state, config, animal, emit);
   drainEnergy(state, config, 'herbivore', emit);
 }
 
-function consumeGrass(state: State, config: Config, animal: Animal): void {
+function consumeGrass(state: State, config: Config, animal: Animal, emit?: Emit, afterDivision = false): void {
   const cell = cellIndex(animal, config.width);
-  animal.energy = Math.min(config.herbivore.maxEnergy, animal.energy + state.grass[cell] * config.grassEfficiency);
+  const energyAfter = Math.min(config.herbivore.maxEnergy, animal.energy + state.grass[cell] * config.grassEfficiency);
+  if (state.grass[cell] > 0) emit?.({ type: 'graze', animal: { ...animal }, cell, grass: state.grass[cell], energyAfter, afterDivision });
+  animal.energy = energyAfter;
   state.grass[cell] = 0;
 }
 
@@ -140,8 +143,8 @@ export function divide(state: State, config: Config, species: Species, random: R
     state.animals.push(child);
     emit?.({ type: 'birth', parentId: parent.id, animal: { ...child }, parentBefore, parentAfter: { ...parent }, sourceCell: cellIndex(parentBefore, config.width) });
     if (species === 'herbivore') {
-      if (parent.column !== parentBefore.column || parent.row !== parentBefore.row) consumeGrass(state, config, parent);
-      consumeGrass(state, config, child);
+      if (parent.column !== parentBefore.column || parent.row !== parentBefore.row) consumeGrass(state, config, parent, emit, true);
+      consumeGrass(state, config, child, emit, true);
     }
   }
 }

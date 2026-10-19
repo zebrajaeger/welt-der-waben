@@ -1,14 +1,27 @@
 import { expect, it, vi } from 'vitest';
 import { defaultConfig } from '../src/config';
 import { center, drawAnimal, drawShape, layout, render } from '../src/render';
-import { makeMotion, sampleMotion } from '../src/animation';
-import { initialize } from '../src/simulation';
+import { makeMotion, planAnimation, sampleAnimation, sampleMotion } from '../src/animation';
+import { initialize, transition } from '../src/simulation';
+import { movingPrey, testConfig } from './fixtures';
 
 function recordingContext() {
   return { beginPath: vi.fn(), closePath: vi.fn(), moveTo: vi.fn(), lineTo: vi.fn(),
     stroke: vi.fn(), fill: vi.fn(), ellipse: vi.fn(), clearRect: vi.fn(),
     lineWidth: 0, strokeStyle: '', fillStyle: '', lineJoin: 'round' };
 }
+it('renders shrinking prey through transfer and no prey fills or strokes after completion', () => {
+  const plan = planAnimation(transition(movingPrey(), testConfig, () => 0));
+  for (const time of [0.5, 0.575, 0.64999, 0.65, 0.75]) {
+    const ctx = recordingContext(), colors: string[] = [];
+    ctx.fill.mockImplementation(() => { colors.push(ctx.fillStyle); });
+    ctx.stroke.mockImplementation(() => { colors.push(ctx.strokeStyle); });
+    const frame = sampleAnimation(plan, time);
+    render(ctx as unknown as CanvasRenderingContext2D, frame.state, testConfig, layout(testConfig, 800, 500), frame.shapes);
+    expect(colors.includes('#ffd285')).toBe(time < 0.65);
+    expect(colors.includes('#ff7b87')).toBe(true);
+  }
+});
 it('fits every hex corner in wide and narrow canvases including single-row fields', () => {
   for (const [width, height] of [[30, 20], [1, 1], [5, 1], [1, 5], [4, 3]]) {
     for (const viewport of [200, 500, 1400]) {

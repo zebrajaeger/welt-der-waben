@@ -27,7 +27,7 @@ describe('animation playback', () => {
     playback.tick(interval / 2);
     expect(playback.progress).toBeCloseTo(0.5);
     expect(playback.state.step).toBe(0);
-    expect(playback.frame.state.animals.some(a => a.id === 1)).toBe(false);
+    expect(playback.frame.state.animals.some(a => a.id === 1)).toBe(true);
     playback.tick(interval);
     expect(playback.active).toBe(false);
     expect(playback.state).toEqual(step(state, config, seededRandom()));
@@ -98,6 +98,52 @@ describe('animation playback', () => {
 });
 
 describe('runtime speed', () => {
+  it('freezes transfer energies and geometry while paused, then changes tempo without a jump', () => {
+    const random = vi.fn(() => 0), compute = vi.fn(state => transition(state, testConfig, random));
+    const playback = new Playback(movingPrey(), testConfig, random, compute);
+    playback.tick(0); playback.tick(287.5); playback.toggle(287.5);
+    expect(playback.progress).toBeCloseTo(0.575);
+    expect(playback.frame.state.animals.find(a => a.id === 1)?.energy).toBeCloseTo(6.5);
+    const frozen = playback.frame, draws = random.mock.calls.length;
+    playback.setStepsPerSecond(0.25, 10000); playback.tick(20000);
+    expect(playback.frame).toEqual(frozen);
+    playback.toggle(20000);
+    playback.tick(20100);
+    expect(playback.progress).toBeCloseTo(0.6);
+    const before = playback.frame;
+    playback.setStepsPerSecond(8, 20100);
+    expect(playback.frame).toEqual(before);
+    playback.tick(20106.25);
+    expect(playback.progress).toBeCloseTo(0.65);
+    expect(playback.frame.shapes.has(1)).toBe(false);
+    playback.tick(20150);
+    expect(playback.state).toEqual(step(movingPrey(), testConfig, () => 0));
+    expect(compute).toHaveBeenCalledTimes(1);
+    expect(random).toHaveBeenCalledTimes(draws);
+  });
+  it('finishes a single step once when a delayed frame skips the rest of transfer and follow-through', () => {
+    const compute = vi.fn(state => transition(state, testConfig, () => 0));
+    const playback = new Playback(movingPrey(), testConfig, undefined, compute);
+    playback.toggle(0); playback.reset(movingPrey(), 0); compute.mockClear();
+    playback.singleStep(0); playback.tick(275);
+    expect(playback.frame.shapes.has(1)).toBe(true);
+    playback.setStepsPerSecond(8, 275);
+    playback.tick(60000); playback.tick(90000);
+    expect(playback.running).toBe(false);
+    expect(playback.canSingleStep).toBe(true);
+    expect(playback.state).toEqual(step(movingPrey(), testConfig, () => 0));
+    expect(compute).toHaveBeenCalledTimes(1);
+  });
+  it('discards every visible transfer residue on reset', () => {
+    const playback = new Playback(movingPrey(), testConfig, () => 0);
+    playback.tick(0); playback.tick(287.5); playback.toggle(287.5);
+    expect(playback.frame.shapes.has(1)).toBe(true);
+    const replacement = testState([resident(99, 4, 3)]);
+    playback.reset(replacement, 300); playback.tick(10000);
+    expect(playback.frame.state).toEqual(replacement);
+    expect([...playback.frame.shapes.keys()]).toEqual([99]);
+    expect(playback.progress).toBe(0);
+  });
   it('settles time at the old speed and changes only future progress', () => {
     const config = Object.freeze({ ...testConfig });
     const compute = vi.fn(state => transition(state, config, () => 0));

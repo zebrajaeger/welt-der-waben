@@ -129,13 +129,16 @@ export async function checkSpeed(page, browser, errors) {
     picture('Jagd · synchroner Kontakt', contact);
     const target = hexCenter({ column: 1, row: 0 });
     const contactDistance = Math.min(...contact.shapes.get(2).map(point => Math.hypot(point[0] - target[0], point[1] - target[1])));
+    hunting.tick(261.25);
+    const preyAfterTransfer = hunting.frame.shapes.has(1);
     return { splitContinuous, huntContinuous, splitGrassEaten,
       preyVisibleBefore: beforeHunt.state.animals.some(a => a.id === 1),
-      preyVisibleAfter: contact.state.animals.some(a => a.id === 1), contactDistance };
+      preyVisibleAfter: contact.state.animals.some(a => a.id === 1), preyAfterTransfer, contactDistance };
   });
   assert.equal(transitions.splitContinuous, true); assert.equal(transitions.huntContinuous, true);
   assert.equal(transitions.splitGrassEaten, true); assert.equal(transitions.preyVisibleBefore, true);
-  assert.equal(transitions.preyVisibleAfter, false); assert(transitions.contactDistance < 1e-9);
+  assert.equal(transitions.preyVisibleAfter, true); assert.equal(transitions.preyAfterTransfer, false);
+  assert(transitions.contactDistance < 1e-9);
   await page.locator('#speed-check').screenshot({ path: '.browser-check/speed-transitions.png' });
   await page.locator('#speed-check').evaluate(host => host.remove());
   console.log(JSON.stringify({ speedChecks: { options: 6, customStart: 3, pauseAndSingleStep: true, ...transitions } }));

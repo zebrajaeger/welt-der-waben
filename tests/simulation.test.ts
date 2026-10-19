@@ -67,6 +67,7 @@ describe('recorded transitions', () => {
     const result = transition(state, config, () => 0);
     expect(result.events).toEqual([
       { type: 'move', animal: animal(1, 0, 0, 5), to: { column: 1, row: 0 } },
+      { type: 'graze', animal: animal(1, 1, 0, 5), cell: 1, grass: 10, energyAfter: 15, afterDivision: false },
       { type: 'hunt', animal: animal(2, 2, 0, 5, 'carnivore'), prey: animal(1, 1, 0, 13), energyAfter: 11.5 },
     ]);
     expect(result.grown.grass[1]).toBe(10);
@@ -75,30 +76,33 @@ describe('recorded transitions', () => {
     expect(result.after.animals).toEqual([animal(2, 1, 0, 9.5, 'carnivore')]);
     result.after.animals[0].energy = 1;
     expect(result.hunted.animals[0].energy).toBe(11.5);
-    expect(result.events[1]).toMatchObject({ animal: { energy: 5 }, prey: { energy: 13 } });
+    expect(result.events[2]).toMatchObject({ animal: { energy: 5 }, prey: { energy: 13 } });
   });
   it('records a birth before a hunt of that newborn, with no newborn movement', () => {
     const state = stateWith([animal(1, 0, 0, 19), animal(2, 1, 0, 5, 'carnivore')], 10);
     const choices = [0, 0, 0.3, 0, 0, 0];
     const result = transition(state, config, () => choices.shift() ?? 0);
-    expect(result.events.map(e => e.type)).toEqual(['move', 'birth', 'hunt']);
-    expect(result.events[1]).toMatchObject({ type: 'birth', parentId: 1, animal: { id: 100, column: 0, row: 0, activeFrom: 3 } });
-    expect(result.events[2]).toMatchObject({ type: 'hunt', animal: { id: 2 }, prey: { id: 100, column: 0, row: 0 } });
+    expect(result.events.map(e => e.type)).toEqual(['move', 'graze', 'birth', 'graze', 'graze', 'hunt']);
+    expect(result.events.find(e => e.type === 'birth')).toMatchObject({ type: 'birth', parentId: 1, animal: { id: 100, column: 0, row: 0, activeFrom: 3 } });
+    expect(result.events.find(e => e.type === 'hunt')).toMatchObject({ type: 'hunt', animal: { id: 2 }, prey: { id: 100, column: 0, row: 0 } });
+    const meals = result.events.filter((e): e is Extract<SimulationEvent, { type: 'graze' }> => e.type === 'graze' && e.afterDivision);
+    expect(meals).toHaveLength(2);
+    expect(meals.every(e => e.animal.energy === 9 && e.energyAfter === 19 && e.grass === 10)).toBe(true);
   });
   it('records only the winning hunter of stationary prey and a subsequent birth at the vacated cell', () => {
     const cfg = { ...config, width: 3, height: 1 };
     const state = { ...stateWith([animal(1, 0, 0, 18, 'carnivore'), animal(2, 2, 0, 5, 'carnivore'), animal(3, 1, 0)]), grass: [0, 0, 0] };
     const result = transition(state, cfg, () => 0);
-    expect(result.events.map(e => e.type)).toEqual(['hunt', 'birth']);
-    expect(result.events[0]).toMatchObject({ type: 'hunt', animal: { id: 1, column: 0 }, prey: { id: 3, column: 1 } });
-    expect(result.events[1]).toMatchObject({ type: 'birth', parentId: 1, animal: { column: 0, row: 0 } });
+    expect(result.events.map(e => e.type)).toEqual(['graze', 'hunt', 'birth']);
+    expect(result.events[1]).toMatchObject({ type: 'hunt', animal: { id: 1, column: 0 }, prey: { id: 3, column: 1 } });
+    expect(result.events[2]).toMatchObject({ type: 'birth', parentId: 1, animal: { column: 0, row: 0 } });
     expect(result.after.animals.find(a => a.id === 2)?.column).toBe(2);
   });
   it('records death after movement and carnivore death after the hunt phase', () => {
     const result = transition(stateWith([animal(1, 0, 0, 1), animal(2, 4, 3, 1, 'carnivore')]), config, () => 0);
-    expect(result.events.map(e => e.type)).toEqual(['move', 'death', 'death']);
-    expect(result.events[1]).toMatchObject({ animal: { id: 1, column: 1, row: 0, energy: 0 } });
-    expect(result.events[2]).toMatchObject({ animal: { id: 2, energy: -1 } });
+    expect(result.events.map(e => e.type)).toEqual(['move', 'graze', 'death', 'death']);
+    expect(result.events[2]).toMatchObject({ animal: { id: 1, column: 1, row: 0, energy: 0 } });
+    expect(result.events[3]).toMatchObject({ animal: { id: 2, energy: -1 } });
     expect(result.after.animals).toHaveLength(0);
   });
 });

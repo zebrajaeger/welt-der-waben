@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { checkSpeed } from './check-speed.mjs';
+import { checkPredation } from './check-predation.mjs';
 
 // Usage: node scripts/browser-check.mjs <playwright/index.mjs> [chromium.exe] [base URL]
 const { chromium } = await import(pathToFileURL(process.argv[2]).href);
@@ -52,6 +53,7 @@ try {
   await page.setViewportSize({ width: 1440, height: 1000 });
 
   await checkSpeed(page, browser, errors);
+  await checkPredation(page);
 
   // Reproducible rendered intermediate poses, using real geometry and transition data.
   const contactChecks = await page.evaluate(async () => {
@@ -78,15 +80,15 @@ try {
     for (const species of ['herbivore', 'carnivore']) {
       for (const [time, label] of species === 'herbivore'
         ? [[0, 'Ausgangsform'], [0.2, 'Spitze im Zentrum'], [0.275, 'Zweite Spitze zieht'], [0.35, 'Dritte folgt'], [0.425, 'Letztes Nachziehen'], [0.5, 'Endform']]
-        : [[0.3, 'Vor Jagd'], [0.5, 'Kontakt'], [0.625, 'Zweite Spitze zieht'], [0.75, 'Dritte folgt'], [0.875, 'Letztes Nachziehen'], [1, 'Endform']]) {
+        : [[0.3, 'Vor Jagd'], [0.5, 'Kontakt'], [0.575, 'Aussaugen'], [0.7375, 'Zweite Spitze zieht'], [0.9, 'Dritte folgt'], [1, 'Endform']]) {
         const ctx = cell(`${species} · ${label} · t=${time}`);
         render(ctx, { ...state, grass: [0, 0, 0], animals: [] }, config, field);
-        const motion = makeMotion(resident(1, 0, species), { column: 1, row: 0 });
+        const motion = species === 'carnivore' ? plan.motions.get(2) : makeMotion(resident(1, 0, species), { column: 1, row: 0 });
         const tips = sampleMotion(motion, time).map(([x, y]) => [6 + x * field.radius, 6 + y * field.radius]);
         drawShape(ctx, tips, 0.5, colors[species]);
       }
     }
-    for (const time of [0.3, 0.499, 0.5, 0.625, 0.75, 1]) {
+    for (const time of [0.3, 0.499, 0.5, 0.575, 0.65, 1]) {
       const ctx = cell(`Jagd · t=${time}`), frame = sampleAnimation(plan, time);
       render(ctx, frame.state, config, field, frame.shapes);
     }
@@ -128,11 +130,13 @@ try {
       checkedDivisions,
       preyBefore: sampleAnimation(plan, 0.499).state.animals.some(a => a.id === 1),
       preyAt: at.state.animals.some(a => a.id === 1),
+      preyAfterTransfer: sampleAnimation(plan, 0.65).shapes.has(1),
       contactDistance: Math.hypot(contactTip[0] - target[0], contactTip[1] - target[1]),
       preyArrived: JSON.stringify(sampleMotion(plan.motions.get(1), 0.5)) === JSON.stringify(plan.motions.get(1).end),
     };
   });
-  assert.equal(contactChecks.preyBefore, true); assert.equal(contactChecks.preyAt, false);
+  assert.equal(contactChecks.preyBefore, true); assert.equal(contactChecks.preyAt, true);
+  assert.equal(contactChecks.preyAfterTransfer, false);
   assert.equal(contactChecks.checkedDivisions, 4);
   assert.equal(contactChecks.preyArrived, true); assert(contactChecks.contactDistance < 1e-9);
   await page.locator('#animation-check').screenshot({ path: '.browser-check/animation-poses.png' });
@@ -143,10 +147,15 @@ try {
   const slow = await browser.newPage({ viewport: { width: 1100, height: 1000 } });
   slow.on('pageerror', error => errors.push(error.message));
   await slow.goto(new URL('/scripts/grass-division-demo.html', page.url()).href);
-  await slow.getByRole('button', { name: 'Vor Ankunft', exact: true }).click();
+  await slow.getByRole('button', { name: 'Vor Aussaugen', exact: true }).click();
   assert.equal(await slow.locator('[data-case="two"] .grass').innerText(), 'Gras je Zelle: 10 · 0 · 10');
   await slow.screenshot({ path: '.browser-check/grass-before-arrival.png', fullPage: true });
-  await slow.getByRole('button', { name: 'Nach Ankunft', exact: true }).click();
+  await slow.locator('#time').fill('415');
+  await slow.locator('#time').dispatchEvent('input');
+  assert.equal(await slow.locator('[data-case="two"] .grass').innerText(), 'Gras je Zelle: 5 · 0 · 5');
+  assert.equal(await slow.locator('[data-case="two"] .energy').innerText(), 'Energie: 14.0 · 14.0');
+  await slow.screenshot({ path: '.browser-check/grass-suction-middle.png', fullPage: true });
+  await slow.getByRole('button', { name: 'Nach Aussaugen', exact: true }).click();
   assert.equal(await slow.locator('[data-case="two"] .grass').innerText(), 'Gras je Zelle: 0 · 0 · 0');
   assert.equal(await slow.locator('[data-case="two"] .energy').innerText(), 'Energie: 19.0 · 19.0');
   assert.equal(await slow.locator('[data-case="one"] .grass').innerText(), 'Gras je Zelle: 0 · 0');
@@ -164,7 +173,7 @@ try {
     const playback = new Playback(initialize(defaultConfig, random), defaultConfig, random);
     const canvas = document.querySelector('#field'), ctx = canvas.getContext('2d');
     const field = layout(defaultConfig, canvas.clientWidth, canvas.clientHeight);
-    const offsets = [0, 100, 175, 250, 375, 450, 500];
+    const offsets = [0, 100, 250, 287.5, 325, 450, 500];
     let totalMs = 0, maxFrameMs = 0, frames = 0, maxPopulation = 0, divisions = 0;
     for (let i = 0; i < 600; i++) {
       const previousNextId = playback.state.nextId;

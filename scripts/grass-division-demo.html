@@ -13,9 +13,9 @@
   canvas { display: block; width: 100%; } output { font-variant-numeric: tabular-nums; }
 </style>
 <h1>Teilung in Zeitlupe</h1>
-<p>Ein Simulationsschritt dauert hier sechs Sekunden. Das Gras bleibt während des Hinausschreitens stehen und verschwindet bei der Ankunft der Hälften. Dann steigt ihre Energie. Der Regler kann exakt vor und nach diesen Zeitpunkt gestellt werden.</p>
+<p>Ein Simulationsschritt dauert hier sechs Sekunden. Die erste Spitze erreicht das Graszentrum und hält dort: Das Gras schrumpft, während die Energie der Hälfte steigt. Erst danach ziehen die übrigen Spitzen nach. Der Regler zeigt auch die Zwischenzustände.</p>
 <div class="controls">
-  <button id="play">Abspielen</button><button id="before">Vor Ankunft</button><button id="after">Nach Ankunft</button>
+  <button id="play">Abspielen</button><button id="before">Vor Aussaugen</button><button id="after">Nach Aussaugen</button>
   <label for="time">Fortschritt</label><input id="time" type="range" min="0" max="1000" value="300"><output id="position"></output>
 </div>
 <div id="cases"></div>
@@ -48,7 +48,7 @@
     for (const item of cases) {
       const frame = sampleAnimation(item.plan, time);
       render(item.context, frame.state, item.config, item.field, frame.shapes);
-      item.grass.textContent = `Gras je Zelle: ${frame.state.grass.join(' · ')}`;
+      item.grass.textContent = `Gras je Zelle: ${frame.state.grass.map(value => Number(value.toFixed(2))).join(' · ')}`;
       item.energy.textContent = `Energie: ${frame.state.animals.map(animal => animal.energy.toFixed(1)).join(' · ')}`;
     }
     play.textContent = playing ? 'Pause' : 'Abspielen';
@@ -67,8 +67,9 @@
     draw();
   });
   slider.addEventListener('input', () => jump(Number(slider.value) / 1000));
-  document.querySelector('#before').addEventListener('click', () => jump(0.499));
-  document.querySelector('#after').addEventListener('click', () => jump(0.5));
+  const meal = cases[0].plan.grazing.find(g => g.event.afterDivision);
+  document.querySelector('#before').addEventListener('click', () => jump(meal.start));
+  document.querySelector('#after').addEventListener('click', () => jump(meal.end));
   draw();
 </script>
 </html>
