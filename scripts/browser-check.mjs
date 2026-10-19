@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { checkSpeed } from './check-speed.mjs';
 import { checkPredation } from './check-predation.mjs';
 import { checkSettings } from './check-settings.mjs';
+import { checkViewport, measureViewport } from './check-viewport.mjs';
 const {chromium}=await import(pathToFileURL(process.argv[2]).href);
 const browser=await chromium.launch({headless:true,...(process.argv[3]?{executablePath:process.argv[3]}:{})});
 const page=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1});
@@ -16,6 +17,7 @@ try {
   await page.getByRole('button',{name:'Neustart',exact:true}).click();
   assert.match(await page.locator('#status').innerText(),/^Tick 0 · 0.00 s · 10 Grasfresser · 10 Karnivoren/);
   await checkSettings(browser, page.url(), errors);
+  await checkViewport(browser, page.url(), errors);
   await checkSpeed(page,browser,errors);
   await checkPredation(page,browser,errors);
   const metrics=await page.evaluate(async()=>{
@@ -69,6 +71,7 @@ try {
     await page.getByRole('button',{name:'Neustart',exact:true}).click();
     await page.getByRole('button',{name:'Einzelschritt',exact:true}).click();
     assert.match(await page.locator('#status').innerText(),/^Tick 1 /);
+    await measureViewport(page);
     assert.equal(await page.locator('#speed option').count(),6);
     await page.locator('#settings summary').click();
     assert.equal(await page.locator('#settings input').count(),24);

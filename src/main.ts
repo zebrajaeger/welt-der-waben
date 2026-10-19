@@ -33,16 +33,20 @@ try {
   let frameRequest: number | undefined;
 
   const draw = () => {
-    const field = layout(activeConfig, Math.max(160, canvas.parentElement!.clientWidth), Math.max(220, window.innerHeight - 270));
-    const ratio = window.devicePixelRatio || 1;
-    const width = Math.round(field.width * ratio), height = Math.round(field.height * ratio);
-    if (canvas.width !== width) canvas.width = width;
-    if (canvas.height !== height) canvas.height = height;
-    canvas.style.width = `${field.width}px`;
-    canvas.style.height = `${field.height}px`;
-    context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    const frame = playback.frame;
-    render(context, frame.state, activeConfig, field, frame.shapes);
+    const host = canvas.parentElement!;
+    // The host gets its size from the page, independently of the canvas bitmap.
+    if (host.clientWidth > 12 && host.clientHeight > 12) {
+      const field = layout(activeConfig, host.clientWidth, host.clientHeight);
+      const ratio = window.devicePixelRatio || 1;
+      const width = Math.round(field.width * ratio), height = Math.round(field.height * ratio);
+      if (canvas.width !== width) canvas.width = width;
+      if (canvas.height !== height) canvas.height = height;
+      canvas.style.width = `${field.width}px`;
+      canvas.style.height = `${field.height}px`;
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      const frame = playback.frame;
+      render(context, frame.state, activeConfig, field, frame.shapes);
+    }
     const state = playback.state;
     const herbivores = state.animals.filter(a => a.species === 'herbivore').length;
     const label = `Tick ${state.tick} · ${(state.tick / ticksPerSecond).toFixed(2)} s · ${herbivores} Grasfresser · ${state.animals.length - herbivores} Karnivoren`;

@@ -8,7 +8,8 @@ export interface Layout { radius: number; width: number; height: number }
 export function layout(config: Config, width: number, maxHeight: number): Layout {
   const unitsWide = Math.sqrt(3) * (config.width + (config.height > 1 ? 0.5 : 0));
   const unitsHigh = 1.5 * (config.height - 1) + 2;
-  const radius = Math.min((width - 12) / unitsWide, (maxHeight - 12) / unitsHigh);
+  const available = Number.isFinite(width) && Number.isFinite(maxHeight);
+  const radius = available ? Math.max(0, Math.min((width - 12) / unitsWide, (maxHeight - 12) / unitsHigh)) : 0;
   return { radius, width: unitsWide * radius + 12, height: unitsHigh * radius + 12 };
 }
 export function center(position: Position, radius: number): [number, number] {

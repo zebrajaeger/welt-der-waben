@@ -24,13 +24,17 @@ it('renders prey during transfer and no yellow fills or strokes after removal', 
     world = tick(world, fastConfig);
   }
 });
-it('fits every hex corner in wide and narrow canvases including single-row fields', () => {
+it('maximally fits every hex corner without distorting wide, narrow or single-cell fields', () => {
   for (const [width, height] of [[30, 20], [1, 1], [5, 1], [1, 5], [4, 3]]) {
-    for (const viewport of [200, 500, 1400]) {
+    for (const [viewport, availableHeight] of [[200, 160], [500, 600], [1400, 800], [3374, 1240]]) {
       const cfg = { ...defaultConfig, width, height };
-      const field = layout(cfg, viewport, 600);
+      const field = layout(cfg, viewport, availableHeight);
       expect(field.width).toBeLessThanOrEqual(viewport + 0.001);
-      expect(field.height).toBeLessThanOrEqual(600.001);
+      expect(field.height).toBeLessThanOrEqual(availableHeight + 0.001);
+      expect(Math.min(viewport - field.width, availableHeight - field.height)).toBeLessThan(0.001);
+      const unitsWide = Math.sqrt(3) * (width + (height > 1 ? 0.5 : 0));
+      const unitsHigh = 1.5 * (height - 1) + 2;
+      expect((field.width - 12) / unitsWide).toBeCloseTo((field.height - 12) / unitsHigh, 10);
       for (let row = 0; row < height; row++) for (let column = 0; column < width; column++) {
         const [x, y] = center({ column, row }, field.radius);
         for (let i = 0; i < 6; i++) {
@@ -42,6 +46,14 @@ it('fits every hex corner in wide and narrow canvases including single-row field
         }
       }
     }
+  }
+});
+
+it('never produces negative or nonfinite radii for temporarily unmeasurable surfaces', () => {
+  for (const [width, height] of [[0, 0], [8, 100], [100, -1], [NaN, 100], [100, Infinity]]) {
+    const field = layout(defaultConfig, width, height);
+    expect(field.radius).toBe(0);
+    expect(Number.isFinite(field.width) && Number.isFinite(field.height)).toBe(true);
   }
 });
 

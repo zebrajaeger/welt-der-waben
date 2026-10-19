@@ -1,7 +1,8 @@
 :root { font-family: system-ui, sans-serif; color: #e8f1df; background: #101c1b; color-scheme: dark; }
 * { box-sizing: border-box; }
 body { margin: 0; }
-main { max-width: 1500px; margin: auto; padding: 24px 32px; }
+main { height: 100vh; height: 100dvh; padding: 16px 20px; display: flex; flex-direction: column; }
+main > * { flex-shrink: 0; min-width: 0; }
 header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
 .eyebrow { color: #9cb29c; text-transform: uppercase; letter-spacing: .15em; font-size: 11px; margin: 0 0 6px; }
 h1 { font-size: clamp(23px, 3vw, 34px); font-weight: 500; margin: 0; letter-spacing: -.04em; }
@@ -16,8 +17,8 @@ button:focus-visible { outline: 2px solid #ffd285; outline-offset: 3px; }
 button:disabled { opacity: .4; cursor: default; }
 #toggle { background: #d5e4b7; color: #1c302a; border-color: #d5e4b7; }
 #status { color: #bdcdb8; font-size: 14px; font-variant-numeric: tabular-nums; margin: 20px 0 14px; }
-.field-container { background: #14251f; border: 1px solid #35534a; border-radius: 12px; display: flex; justify-content: center; overflow: hidden; }
-#field { display: block; max-width: 100%; }
+.field-container { flex: 1 0 162px; min-height: 162px; position: relative; background: #14251f; border: 1px solid #35534a; border-radius: 12px; overflow: hidden; }
+#field { display: block; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
 footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; color: #9cb29c; font-size: 12px; }
 footer p { display: flex; align-items: center; gap: 8px; }
 footer p span:not(:first-child) { margin-left: 10px; }
@@ -28,7 +29,7 @@ footer p span:not(:first-child) { margin-left: 10px; }
 .settings { margin-top: 20px; border: 1px solid #35534a; border-radius: 10px; background: #14251f; }
 .settings summary { padding: 13px 16px; cursor: pointer; color: #d5e4b7; font-size: 14px; }
 .settings summary:focus-visible, .settings input:focus-visible { outline: 2px solid #ffd285; outline-offset: 3px; }
-.settings form { padding: 0 16px 14px; }
+.settings form { padding: 0 16px 14px; max-height: 40vh; max-height: 40dvh; overflow-y: auto; scrollbar-gutter: stable; }
 .settings p, #settings-notice { color: #bdcdb8; font-size: 13px; line-height: 1.5; }
 .settings-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 16px; }
 .settings fieldset { min-width: 0; margin: 0; padding: 12px; border: 1px solid #35534a; border-radius: 6px; }
