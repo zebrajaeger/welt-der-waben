@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="de">
+  <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Wabenökosystem</title></head>
+  <body>
+    <main>
+      <header><div><p class="eyebrow">Ein kleines Ökosystem</p><h1>Leben in den Waben</h1></div>
+        <div class="controls"><button id="toggle" type="button">Pause</button><button id="step" type="button">Einzelschritt</button><button id="reset" type="button">Neustart</button></div>
+      </header>
+      <p id="status" aria-live="polite"></p>
+      <section class="field-container" aria-label="Simulationsfeld"><canvas id="field" aria-label="Wabenfeld mit Gras, Grasfressern und Karnivoren"></canvas></section>
+      <footer>
+        <p><span class="grass-dot"></span> Gras <span class="herbivore-dot"></span> Grasfresser <span class="carnivore-dot"></span> Karnivoren</p>
+        <div class="energy-key"><span>Energie</span><canvas width="48" height="48" data-energy="0.03" aria-label="Wenig Energie"></canvas><canvas width="48" height="48" data-energy="0.5" aria-label="Mittlere Energie"></canvas><canvas width="48" height="48" data-energy="1" aria-label="Volle Energie"></canvas><span>wenig → viel</span></div>
+        <p class="hint">Gras wächst. Grasfresser ziehen. Karnivoren folgen ihrer Beute.</p>
+      </footer>
+    </main><script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
