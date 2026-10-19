@@ -6,7 +6,7 @@ Ein kleines Ökosystem auf einem Sechseckraster: Gras wächst, Grasfresser fress
 
 Entwickelt mit TypeScript, Canvas 2D und Vite. Die Benutzeroberfläche ist derzeit deutsch.
 
-**Geplante Onlineversion:** [Welt der Waben öffnen](https://zebrajaeger.github.io/welt-der-waben/). Die Veröffentlichung über GitHub Pages ist vorbereitet; das erste Live-Deployment wurde noch nicht verifiziert. Die [Deployment-Anleitung](docs/deployment.md) beschreibt Aktivierung und Prüfung.
+**Online spielen:** [Welt der Waben öffnen](https://zebrajaeger.github.io/welt-der-waben/). Gehostet auf GitHub Pages und nach erfolgreichen Prüfungen auf `main` automatisch aktualisiert. Details stehen in der [Deployment-Anleitung](docs/deployment.md).
 
 [Überblick](#überblick) · [Screenshots](#screenshots) · [Schnellstart](#schnellstart) · [Bedienung](#bedienung) · [Simulationsregeln](#simulationsregeln) · [Einstellungen und Einheiten](#einstellungen-und-einheiten) · [Entwicklung](#entwicklung)
 

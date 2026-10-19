@@ -1,6 +1,6 @@
 # GitHub Pages deployment
 
-The project is prepared for **https://zebrajaeger.github.io/welt-der-waben/**. The first live deployment has not yet been verified. GitHub Pages activation and a successful workflow run are required before the address can be treated as published.
+The simulation is live at **https://zebrajaeger.github.io/welt-der-waben/**. GitHub Pages uses the GitHub Actions publishing source. The [first deployment](https://github.com/zebrajaeger/welt-der-waben/actions/runs/39320672810) completed successfully on 2026-10-19, and the production browser check also passed against the public site, including controls, saved settings after reload and independent visitor defaults.
 
 ## Local development and production preview
 
@@ -40,7 +40,7 @@ The `.pw.ts` files in `e2e/` belong only to Playwright; `npm test` continues to 
 
 ## Enable GitHub Pages
 
-An administrator or another user with the required repository permissions must enable Pages for [zebrajaeger/welt-der-waben](https://github.com/zebrajaeger/welt-der-waben):
+Pages is already enabled for [zebrajaeger/welt-der-waben](https://github.com/zebrajaeger/welt-der-waben). To reproduce the setup in another repository, an administrator or another user with the required repository permissions can follow these steps (adjust the repository URL and Vite base accordingly):
 
 1. Open **Settings → Pages**.
 2. Under **Build and deployment → Source**, choose **GitHub Actions**. Repository/account policies must allow Pages and the official Actions used by the workflow.
@@ -48,7 +48,7 @@ An administrator or another user with the required repository permissions must e
 4. Wait for both **build** and **deploy** to complete successfully. The `github-pages` environment shows the deployment URL. Any configured environment approval must also be completed.
 5. Open **https://zebrajaeger.github.io/welt-der-waben/**, reload it, and check that the field advances, pause and stepping work, and settings persist when saved.
 
-Until the first successful run and a check of this public address, the site is **prepared, not verified as live**. Creating the local files alone does not enable Pages. No personal access token, custom domain or `gh-pages` branch is needed for this workflow.
+For a new setup, verify both the first successful run and the public address before announcing it as live. Creating the local files alone does not enable Pages. No personal access token, custom domain or `gh-pages` branch is needed for this workflow.
 
 ## What the workflow publishes
 

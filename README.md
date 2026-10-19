@@ -6,7 +6,7 @@ A small ecosystem on a hexagonal grid: grass grows, herbivores feed and divide, 
 
 Built with TypeScript, Canvas 2D and Vite. The application interface is currently in German.
 
-**Planned online version:** [Open Welt der Waben](https://zebrajaeger.github.io/welt-der-waben/). GitHub Pages deployment is prepared; the first live deployment has not yet been verified. See the [deployment guide](docs/deployment.md) for activation and verification.
+**Play online:** [Open Welt der Waben](https://zebrajaeger.github.io/welt-der-waben/). Hosted on GitHub Pages and updated automatically after successful checks on `main`. See the [deployment guide](docs/deployment.md) for details.
 
 [Overview](#overview) · [Screenshots](#screenshots) · [Quick start](#quick-start) · [Controls](#controls) · [Simulation rules](#simulation-rules) · [Settings and units](#settings-and-units) · [Development](#development)
 
