@@ -5,6 +5,10 @@ main { height: 100vh; height: 100dvh; padding: 16px 20px; display: flex; flex-di
 main > * { flex-shrink: 0; min-width: 0; }
 header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
 .eyebrow { color: #9cb29c; text-transform: uppercase; letter-spacing: .15em; font-size: 11px; margin: 0 0 6px; }
+.eyebrow:has(.source-link) { position: relative; padding-inline-end: 32px; }
+.source-link { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; display: grid; place-items: center; color: #9cb29c; border-radius: 4px; }
+.source-link:hover { color: #e8f1df; background: #30483a; }
+.source-link:focus-visible { color: #e8f1df; outline: 2px solid #ffd285; outline-offset: -2px; }
 h1 { font-size: clamp(23px, 3vw, 34px); font-weight: 500; margin: 0; letter-spacing: -.04em; }
 .controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .speed-control { display: flex; align-items: center; gap: 8px; color: #bdcdb8; font-size: 13px; }

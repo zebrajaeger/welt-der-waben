@@ -52,6 +52,7 @@ Die Tabelle verwendet die Beschriftungen der deutschen Oberfläche.
 | **Neustart** | Eine neue zufällige Welt mit den aktiven Einstellungen beginnen; Pausenmodus und aktuelles Tempo bleiben erhalten. |
 | **Tempo** | Die Wiedergabe sofort zwischen 0,25× und 8× ändern. Bei 1× verstreichen 60 Ticks pro Realzeitsekunde, bei 2× sind es 120. |
 | **Einstellungen** | Die Parameterbox auf- oder einklappen. |
+| **GitHub-Symbol** | Neben „Ein kleines Ökosystem“ den Quellcode in einem neuen Tab öffnen. Auch mit Tab und Enter bedienbar. |
 
 Die Statuszeile zeigt Tickzahl, vergangene Simulationszeit und Populationen beider Arten. Eine Fensteränderung verändert nur die Projektion. Bei unterschiedlichem Seitenverhältnis bleiben Restflächen um das zentrierte Raster.
 

@@ -52,6 +52,7 @@ The table uses the labels shown in the German interface.
 | **Neustart** | Start a new random world with the active settings; keep the pause state and current speed. |
 | **Tempo** | Change playback immediately, from 0.25× to 8×. At 1×, 60 ticks pass per real second; at 2×, 120. |
 | **Einstellungen** | Expand or collapse the parameter panel. |
+| **GitHub icon** | Next to “Ein kleines Ökosystem”, open the source repository in a new tab. Also accessible with Tab and Enter. |
 
 The status line shows the tick, elapsed simulation time and population of each species. Resizing the window changes only the projection. Different aspect ratios leave some empty space around the centered grid.
 
