@@ -52,7 +52,7 @@ export function initialize(config: Config, random: Random = Math.random): State 
     const slot = Math.floor(random() * available.length), index = available[slot];
     available[slot] = available[available.length - 1]; available.pop();
     state.animals.push({ id: state.nextId++, species, column: index % config.width, row: Math.floor(index / config.width),
-      energy: config[species].maxEnergy / 2, angle: defaultAngle, readyAt: Math.floor(random() * config.waitTicks) });
+      energy: config[species].initialEnergy, angle: defaultAngle, readyAt: Math.floor(random() * config.waitTicks) });
     if (species === 'herbivore') state.grass[index] = 0;
   }
   return state;

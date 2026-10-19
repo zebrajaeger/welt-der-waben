@@ -6,6 +6,17 @@ import { advance, fastConfig, resident, seededRandom, testConfig, testState } fr
 
 
 describe('fixed tick clock', () => {
+  it('uses independent absolute start energies at every map initialization', () => {
+    const config = { ...defaultConfig,
+      herbivore: { ...defaultConfig.herbivore, initialEnergy: 7.5 },
+      carnivore: { ...defaultConfig.carnivore, maxEnergy: 40, initialEnergy: 30 } };
+    for (const seed of [17, 29]) {
+      const world = initialize(config, seededRandom(seed));
+      expect(world.tick).toBe(0);
+      for (const animal of world.animals) expect(animal.energy).toBe(config[animal.species].initialEnergy);
+      for (const animal of world.animals.filter(a => a.species === 'herbivore')) expect(world.grass[animal.row * config.width + animal.column]).toBe(0);
+    }
+  });
   it.each(['approach', 'transfer', 'follow', 'divide'])('removes death during %s and frees all owned cells', phase => {
     let state = testState([resident(1, 0, 0, phase === 'divide' ? 19 : 5)], 0, fastConfig);
     state.grass[1] = 4;

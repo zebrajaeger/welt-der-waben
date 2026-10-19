@@ -2,6 +2,7 @@
 
 export interface SpeciesConfig {
   initialCount: number;
+  initialEnergy: number;
   maxEnergy: number;
   energyDrainPerSecond: number;
   divisionFraction: number;
@@ -29,8 +30,8 @@ export const defaultConfig: Config = {
   grassEfficiency: 1, preyEfficiency: 0.5, energyTransferPerSecond: 8,
   speedMultiplier: 2, approachTicks: 12, followTicks: 6, waitTicks: 12,
   swellTicks: 6, divisionApproachTicks: 8, divisionFollowTicks: 4,
-  herbivore: { initialCount: 10, maxEnergy: 20, energyDrainPerSecond: 2, divisionFraction: 0.75 },
-  carnivore: { initialCount: 10, maxEnergy: 20, energyDrainPerSecond: 2, divisionFraction: 0.75 },
+  herbivore: { initialCount: 10, initialEnergy: 10, maxEnergy: 20, energyDrainPerSecond: 2, divisionFraction: 0.75 },
+  carnivore: { initialCount: 10, initialEnergy: 10, maxEnergy: 20, energyDrainPerSecond: 2, divisionFraction: 0.75 },
 };
 export function validateConfig(config: Config): void {
   const number = (value: number, name: string, min: number, strict = false) => {
@@ -47,6 +48,8 @@ export function validateConfig(config: Config): void {
     if (!species) throw new Error(`${kind} fehlt`);
     integer(species.initialCount, `${kind}.initialCount`, 0);
     number(species.maxEnergy, `${kind}.maxEnergy`, 0, true);
+    number(species.initialEnergy, `${kind}.initialEnergy`, 0, true);
+    if (species.initialEnergy > species.maxEnergy) throw new Error(`${kind}.initialEnergy darf die Maximalenergie nicht überschreiten`);
     number(species.energyDrainPerSecond, `${kind}.energyDrainPerSecond`, 0, true);
     number(species.divisionFraction, `${kind}.divisionFraction`, 0, true);
     if (species.divisionFraction >= 1) throw new Error(`${kind}.divisionFraction muss < 1 sein`);

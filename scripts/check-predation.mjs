@@ -2,7 +2,7 @@
 
 export async function checkPredation(page,browser,errors) {
   const demo=await browser.newPage({viewport:{width:1200,height:1000}});
-  demo.on('pageerror',e=>errors.push(e.message));
+  demo.on('pageerror',e=>{console.error(e.stack);errors.push(e.message);});
   await demo.goto(new URL('/scripts/grass-division-demo.html',page.url()).href);
   await demo.getByRole('button',{name:'Übertragung',exact:true}).click();
   const short=await demo.locator('[data-case="short"] .details').innerText();

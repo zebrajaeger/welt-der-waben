@@ -9,6 +9,22 @@
           <div class="speed-control"><label for="speed">Tempo</label><select id="speed"></select></div>
         </div>
       </header>
+      <details id="settings" class="settings">
+        <summary>Einstellungen</summary>
+        <form id="settings-form" novalidate>
+          <p id="settings-help">Alle Raten gelten pro Simulationssekunde; 60 Ticks = 1 s. Änderungen werden erst durch Übernehmen aktiv. Dabei beginnt ein neuer Lauf.</p>
+          <div id="settings-fields" class="settings-fields"></div>
+          <div class="settings-actions">
+            <button type="submit">Übernehmen &amp; neu starten</button>
+            <button id="settings-save" type="button">Im Browser speichern</button>
+            <button id="settings-defaults" type="button">Standardwerte</button>
+          </div>
+          <p class="settings-hint">Speichern bewahrt den Formularentwurf für spätere Besuche dieser Browseradresse. Standardwerte setzt das Formular zurück; anschließend übernehmen oder speichern.</p>
+          <p id="settings-state" role="status"></p>
+          <p id="settings-message" role="status" tabindex="-1"></p>
+        </form>
+      </details>
+      <p id="settings-notice" role="status"></p>
       <p id="status" aria-live="polite"></p>
       <section class="field-container" aria-label="Simulationsfeld"><canvas id="field" aria-label="Wabenfeld mit Gras, Grasfressern und Karnivoren"></canvas></section>
       <footer>

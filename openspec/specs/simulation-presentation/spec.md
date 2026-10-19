@@ -151,7 +151,7 @@ Ein Tempowechsel SHALL ausschließlich die weitere Simulationszeit beschleunigen
 - **THEN** sind nach gleicher Tickzahl Regelzustand, Reservierungen und Aktionsfortschritte identisch
 
 ### Requirement: Tempo und bestehende Wiedergabebedienung
-Die Tempoauswahl SHALL bei Pause und Einzeltick bedienbar bleiben. Änderung in der Pause SHALL keinen Tick auslösen. Weiter SHALL den neuen Faktor nutzen. Einzelschritt SHALL unabhängig vom Zeitfaktor genau einen Tick ausführen. Neustart SHALL die Auswahl erhalten und Neuladen SHALL den konfigurierten Startfaktor verwenden.
+Die Tempoauswahl SHALL bei Pause und Einzeltick bedienbar bleiben. Änderung in der Pause SHALL keinen Tick auslösen. Weiter SHALL den neuen Faktor nutzen. Einzelschritt SHALL unabhängig vom Zeitfaktor genau einen Tick ausführen. Neustart SHALL aktive Parameter und Tempo erhalten. Neuladen SHALL gültige gespeicherte Einstellungen einschließlich Tempo verwenden, andernfalls die Programmstandards. Sofortige Tempowahl SHALL ohne ausdrückliches Speichern nicht dauerhaft sein.
 
 #### Scenario: Änderung während einer Pause
 - **WHEN** in der Pause ein anderer Zeitfaktor gewählt wird
@@ -163,7 +163,11 @@ Die Tempoauswahl SHALL bei Pause und Einzeltick bedienbar bleiben. Änderung in 
 
 #### Scenario: Neustart und Neuladen
 - **WHEN** nach einer Tempowahl neu gestartet und später neu geladen wird
-- **THEN** behält Neustart die Wahl und Neuladen verwendet den konfigurierten Startfaktor
+- **THEN** behält Neustart aktive Parameter und Tempowahl; Neuladen verwendet die zuletzt ausdrücklich gespeicherten gültigen Einstellungen oder ohne solche Daten die Programmstandards
+
+#### Scenario: Neuer Lauf bei unbearbeitetem Entwurf
+- **WHEN** Formularentwurf und aktive Einstellungen voneinander abweichen und Neustart betätigt wird
+- **THEN** verwendet der neue Lauf die aktiven Einstellungen und das aktuelle Tempo, ohne den Entwurf zu übernehmen oder zu verwerfen
 
 ### Requirement: Kontinuierliches Aussaugen der Beuteenergie
 Beute SHALL während der Entnahme entsprechend ihrer Restenergie schrumpfen. Jägerenergie SHALL Transfer und laufenden Verbrauch abbilden. Aussaugdauer SHALL von tatsächlich übertragener Energie und konstanter Rate abhängen. Nur bei Energie null SHALL die Beute restlos verschwinden; überlebende Restbeute SHALL sichtbar bleiben. Es SHALL kein Gewinn vor Kontakt und kein Verwerfen überschüssiger Nahrung erfolgen.

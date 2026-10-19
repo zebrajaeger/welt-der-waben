@@ -1,19 +1,21 @@
-﻿import { strict as assert } from 'node:assert';
+import { strict as assert } from 'node:assert';
 import { readFile,writeFile,mkdir } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { checkSpeed } from './check-speed.mjs';
 import { checkPredation } from './check-predation.mjs';
+import { checkSettings } from './check-settings.mjs';
 const {chromium}=await import(pathToFileURL(process.argv[2]).href);
 const browser=await chromium.launch({headless:true,...(process.argv[3]?{executablePath:process.argv[3]}:{})});
 const page=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1});
 page.setDefaultTimeout(15000);
-const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const errors=[];page.on('pageerror',e=>{console.error(e.stack);errors.push(e.message);});
 await mkdir('.browser-check',{recursive:true});
 try {
   await page.goto(process.argv[4]??'http://localhost:5173');
   await page.getByRole('button',{name:'Pause',exact:true}).click();
   await page.getByRole('button',{name:'Neustart',exact:true}).click();
   assert.match(await page.locator('#status').innerText(),/^Tick 0 · 0.00 s · 10 Grasfresser · 10 Karnivoren/);
+  await checkSettings(browser, page.url(), errors);
   await checkSpeed(page,browser,errors);
   await checkPredation(page,browser,errors);
   const metrics=await page.evaluate(async()=>{
@@ -68,6 +70,13 @@ try {
     await page.getByRole('button',{name:'Einzelschritt',exact:true}).click();
     assert.match(await page.locator('#status').innerText(),/^Tick 1 /);
     assert.equal(await page.locator('#speed option').count(),6);
+    await page.locator('#settings summary').click();
+    assert.equal(await page.locator('#settings input').count(),24);
+    await page.locator('[name="herbivore.initialCount"]').fill('2');
+    await page.getByRole('button',{name:'Übernehmen & neu starten',exact:true}).click();
+    assert.match(await page.locator('#status').innerText(),/^Tick 0 .*2 Grasfresser/);
+    await page.getByRole('button',{name:'Einzelschritt',exact:true}).click();
+    assert.match(await page.locator('#status').innerText(),/^Tick 1 /);
   } finally {
     await writeFile(mainPath,main);await page.waitForTimeout(500);
   }

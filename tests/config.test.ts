@@ -10,6 +10,7 @@ describe('configuration', () => {
     for (const kind of ['herbivore', 'carnivore'] as const) {
       expect(defaultConfig[kind].initialCount).toBe(10);
       expect(defaultConfig[kind].maxEnergy / 2).toBe(10);
+      expect(defaultConfig[kind].initialEnergy).toBe(10);
       expect(defaultConfig[kind].divisionFraction).toBe(0.75);
     }
     expect(() => validateConfig(defaultConfig)).not.toThrow();
@@ -40,7 +41,7 @@ describe('configuration', () => {
       }
     }
     for (const kind of ['herbivore', 'carnivore'] as const) {
-      for (const key of ['initialCount', 'maxEnergy', 'energyDrainPerSecond', 'divisionFraction']) {
+      for (const key of ['initialCount', 'initialEnergy', 'maxEnergy', 'energyDrainPerSecond', 'divisionFraction']) {
         for (const value of [NaN, Infinity, -Infinity, -1, 0]) {
           if (key === 'initialCount' && value === 0) continue;
           expect(() => validateConfig({ ...defaultConfig, [kind]: { ...defaultConfig[kind], [key]: value } })).toThrow();
@@ -50,5 +51,13 @@ describe('configuration', () => {
     }
     expect(() => validateConfig({ ...defaultConfig, grassGrowthPerSecond: 3 })).toThrow(/Graswachstum/);
     expect(() => validateConfig({ ...defaultConfig, width: 5, height: 4 })).not.toThrow();
+  });
+  it('requires positive finite start energy no larger than the species maximum', () => {
+    for (const kind of ['herbivore', 'carnivore'] as const) {
+      for (const initialEnergy of [0, -1, NaN, Infinity, 21]) {
+        expect(() => validateConfig({ ...defaultConfig, [kind]: { ...defaultConfig[kind], initialEnergy } })).toThrow(/initialEnergy/);
+      }
+      expect(() => validateConfig({ ...defaultConfig, [kind]: { ...defaultConfig[kind], initialEnergy: 20 } })).not.toThrow();
+    }
   });
 });

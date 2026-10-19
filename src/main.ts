@@ -1,5 +1,8 @@
 import './style.css';
-import { defaultConfig, ticksPerSecond, validateConfig } from './config';
+import { ticksPerSecond } from './config';
+import { copyConfig } from './settings';
+import { loadSettings } from './settings-storage';
+import { createSettingsPanel } from './settings-panel';
 import { initialize } from './simulation';
 import { drawLegend, layout, render } from './render';
 import { Playback } from './playback';
@@ -13,20 +16,24 @@ const reset = document.querySelector<HTMLButtonElement>('#reset')!;
 const speed = document.querySelector<HTMLSelectElement>('#speed')!;
 
 try {
-  validateConfig(defaultConfig);
+  const loaded = loadSettings();
+  let activeConfig = copyConfig(loaded.config);
   if (!context) throw new Error('Dieser Browser unterstützt Canvas 2D nicht.');
-  const playback = new Playback(initialize(defaultConfig), defaultConfig);
+  let playback = new Playback(initialize(activeConfig), activeConfig);
   const speedFormat = new Intl.NumberFormat('de-DE', { maximumSignificantDigits: 15 });
-  speed.replaceChildren();
-  for (const value of [...new Set([0.25, 0.5, 1, 2, 4, 8, playback.speedMultiplier])].sort((a, b) => a - b)) {
-    speed.add(new Option(`${speedFormat.format(value)}×`, String(value)));
-  }
-  speed.value = String(playback.speedMultiplier);
+  const updateSpeed = () => {
+    speed.replaceChildren();
+    for (const value of [...new Set([0.25, 0.5, 1, 2, 4, 8, playback.speedMultiplier])].sort((a, b) => a - b)) {
+      speed.add(new Option(`${speedFormat.format(value)}×`, String(value)));
+    }
+    speed.value = String(playback.speedMultiplier);
+  };
+  updateSpeed();
   const listeners = new AbortController();
   let frameRequest: number | undefined;
 
   const draw = () => {
-    const field = layout(defaultConfig, Math.max(160, canvas.parentElement!.clientWidth), Math.max(220, window.innerHeight - 270));
+    const field = layout(activeConfig, Math.max(160, canvas.parentElement!.clientWidth), Math.max(220, window.innerHeight - 270));
     const ratio = window.devicePixelRatio || 1;
     const width = Math.round(field.width * ratio), height = Math.round(field.height * ratio);
     if (canvas.width !== width) canvas.width = width;
@@ -35,7 +42,7 @@ try {
     canvas.style.height = `${field.height}px`;
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
     const frame = playback.frame;
-    render(context, frame.state, defaultConfig, field, frame.shapes);
+    render(context, frame.state, activeConfig, field, frame.shapes);
     const state = playback.state;
     const herbivores = state.animals.filter(a => a.species === 'herbivore').length;
     const label = `Tick ${state.tick} · ${(state.tick / ticksPerSecond).toFixed(2)} s · ${herbivores} Grasfresser · ${state.animals.length - herbivores} Karnivoren`;
@@ -54,11 +61,22 @@ try {
     if (frameRequest !== undefined) cancelAnimationFrame(frameRequest);
     frameRequest = playback.running ? requestAnimationFrame(animate) : undefined;
   };
+  const settings = createSettingsPanel(loaded, () => activeConfig, config => {
+    const now = performance.now(), running = playback.running;
+    const nextConfig = copyConfig(config);
+    const nextPlayback = new Playback(initialize(nextConfig), nextConfig);
+    if (!running) nextPlayback.toggle(now);
+    else nextPlayback.tick(now);
+    activeConfig = nextConfig; playback = nextPlayback;
+    updateSpeed(); draw(); schedule();
+  }, listeners.signal);
   toggle.addEventListener('click', () => { playback.toggle(performance.now()); draw(); schedule(); }, { signal: listeners.signal });
   singleStep.addEventListener('click', () => { playback.singleStep(performance.now()); draw(); schedule(); }, { signal: listeners.signal });
-  reset.addEventListener('click', () => { playback.reset(initialize(defaultConfig), performance.now()); draw(); schedule(); }, { signal: listeners.signal });
+  reset.addEventListener('click', () => { playback.reset(initialize(activeConfig), performance.now()); draw(); schedule(); }, { signal: listeners.signal });
   speed.addEventListener('change', () => {
     playback.setSpeedMultiplier(Number(speed.value), performance.now());
+    activeConfig = { ...activeConfig, speedMultiplier: playback.speedMultiplier };
+    settings.setTempo(playback.speedMultiplier);
     draw(); schedule();
   }, { signal: listeners.signal });
   const observer = new ResizeObserver(draw);
