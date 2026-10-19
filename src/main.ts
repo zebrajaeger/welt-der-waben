@@ -1,5 +1,5 @@
 import './style.css';
-import { defaultConfig, validateConfig } from './config';
+import { defaultConfig, ticksPerSecond, validateConfig } from './config';
 import { initialize } from './simulation';
 import { drawLegend, layout, render } from './render';
 import { Playback } from './playback';
@@ -17,10 +17,11 @@ try {
   if (!context) throw new Error('Dieser Browser unterstützt Canvas 2D nicht.');
   const playback = new Playback(initialize(defaultConfig), defaultConfig);
   const speedFormat = new Intl.NumberFormat('de-DE', { maximumSignificantDigits: 15 });
-  for (const value of [...new Set([0.25, 0.5, 1, 2, 4, 8, playback.stepsPerSecond])].sort((a, b) => a - b)) {
-    speed.add(new Option(`${speedFormat.format(value)} ${value === 1 ? 'Schritt' : 'Schritte'}/s`, String(value)));
+  speed.replaceChildren();
+  for (const value of [...new Set([0.25, 0.5, 1, 2, 4, 8, playback.speedMultiplier])].sort((a, b) => a - b)) {
+    speed.add(new Option(`${speedFormat.format(value)}×`, String(value)));
   }
-  speed.value = String(playback.stepsPerSecond);
+  speed.value = String(playback.speedMultiplier);
   const listeners = new AbortController();
   let frameRequest: number | undefined;
 
@@ -37,7 +38,7 @@ try {
     render(context, frame.state, defaultConfig, field, frame.shapes);
     const state = playback.state;
     const herbivores = state.animals.filter(a => a.species === 'herbivore').length;
-    const label = `Schritt ${state.step} · ${herbivores} Grasfresser · ${state.animals.length - herbivores} Karnivoren`;
+    const label = `Tick ${state.tick} · ${(state.tick / ticksPerSecond).toFixed(2)} s · ${herbivores} Grasfresser · ${state.animals.length - herbivores} Karnivoren`;
     if (status.textContent !== label) status.textContent = label;
     toggle.textContent = playback.running ? 'Pause' : 'Weiter';
     toggle.setAttribute('aria-pressed', String(playback.running));
@@ -57,7 +58,7 @@ try {
   singleStep.addEventListener('click', () => { playback.singleStep(performance.now()); draw(); schedule(); }, { signal: listeners.signal });
   reset.addEventListener('click', () => { playback.reset(initialize(defaultConfig), performance.now()); draw(); schedule(); }, { signal: listeners.signal });
   speed.addEventListener('change', () => {
-    playback.setStepsPerSecond(Number(speed.value), performance.now());
+    playback.setSpeedMultiplier(Number(speed.value), performance.now());
     draw(); schedule();
   }, { signal: listeners.signal });
   const observer = new ResizeObserver(draw);

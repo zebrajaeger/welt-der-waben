@@ -1,30 +1,19 @@
-# Wabenökosystem
+﻿# Wabenökosystem
 
-Mit Node.js (Version 22.12 oder neuer) im Projektverzeichnis starten:
+Mit Node.js ab 22.12 im Projektverzeichnis `npm install` und `npm run dev` ausführen. Die von Vite angezeigte Adresse öffnen. `npm test` prüft Regeln, Geometrie und Wiedergabe; `npm run build` prüft TypeScript und erstellt `dist/`.
 
-```sh
-npm install
-npm run dev
-```
+Die Simulation arbeitet mit **60 Ticks pro Simulationssekunde**. Jeder Bewohner hat seinen eigenen Ablauf. Eine lange Mahlzeit oder Teilung hält andere Tiere und das Graswachstum nicht an. Grüne Ovale zeigen Gras, gelbe Sterne Grasfresser und rote Sterne Karnivoren. Die Energie füllt die Sterne zu Dreiecken auf.
 
-Die von Vite angezeigte lokale Adresse im Browser öffnen. Änderungen an `src/` werden automatisch übernommen. `npm test` führt Regel- und Canvas-Zeichentests aus; `npm run build` prüft TypeScript und erstellt den Produktionsbuild in `dist/`.
+**Pause / Weiter** friert sämtliche Vorgänge ein oder setzt sie fort. **Einzelschritt** führt genau einen Tick weiter, auch mitten in einer Bewegung. **Neustart** verteilt beide Arten neu und verwirft laufende Aktionen. **Tempo** bietet 0,25× bis 8×: Bei 1× verstreichen 60 Ticks pro Realzeitsekunde, bei 2× sind es 120. Neustart behält die Auswahl; Neuladen verwendet den konfigurierten Startfaktor. Der Status zeigt Tick, Simulationszeit und aktuelle Populationen.
 
-Die Simulation läuft automatisch. **Pause / Weiter** hält die Wiedergabe an oder setzt sie fort; im pausierten Zustand führt **Einzelschritt** genau einen logischen Schritt aus. **Neustart** verteilt beide Arten neu. Die Statuszeile zeigt Schrittzahl und Populationen. Grüne Ovale stellen Gras dar, gelbe Sterne Grasfresser und rote Sterne Karnivoren. Nach erfolgreicher Jagd zieht ein Karnivor auf die Zelle seiner Beute; ohne Jagderfolg bleibt er stehen. Mit steigender Energie wachsen die drei Arme zum gefüllten Dreieck; die Energielegende zeigt drei Beispiele. Das gesamte Wabenfeld passt sich der Fenstergröße an. Populationen können aussterben; Neustart beginnt einen neuen Zufallslauf.
+Eine Spitze streckt sich zum Zielzentrum. Während des Aussaugens halten die Spitzen; anschließend ziehen die beiden anderen nacheinander nach. Die Aussaugdauer hängt von der tatsächlich übertragenen Energie ab. Überschüssiges und neu gewachsenes Gras bleibt erhalten. Überlebt eine teilweise ausgesaugte Beute, zieht der Karnivor seine Spitze zurück und die Beute bleibt in ihrer Zelle. Erst nach vollständigem Aufzehren zieht der Jäger auf die Beutezelle.
 
-## Animation und Bedienung
+Bei Teilung entstehen zwei Hälften mit gleicher Energie. Sind zwei Nachbarn frei, ziehen beide hinaus; bei einem bleibt eine Hälfte am Ursprung. Jede Hälfte nimmt lokal Gras auf und beendet ihre eigene Bewegung. Populationen können aussterben; Neustart beginnt einen neuen Zufallslauf.
 
-Zellwechsel laufen über die drei Spitzen: Eine Spitze streckt sich zum Zentrum des Nachbarfelds, dann folgen die beiden anderen nacheinander. Ein erfolgreicher Karnivor erreicht den Grasfresser mit seiner Spitze genau bei dessen Ankunft und zieht anschließend nach. **Pause** friert auch eine laufende Bewegung ein, **Weiter** setzt sie fort. **Einzelschritt** spielt einen vollständigen animierten Schritt ab und pausiert danach; während eines laufenden Übergangs ist die Taste gesperrt. **Neustart** verwirft einen laufenden Übergang. Schrittzahl und Populationen beziehen sich stets auf den letzten abgeschlossenen Schritt. Die Fenstergröße darf auch während einer Bewegung geändert werden.
+## Konfiguration und Einheiten
 
-Die Animation skaliert mit `stepsPerSecond` und ändert keine Regeln pro Schritt. Entwicklerhinweise zu Phasenzuständen und Ereignissen stehen in [docs/animation.md](docs/animation.md).
+`src/config.ts` enthält `defaultConfig`. `grassGrowthPerSecond` ist Gras je Zelle und Simulationssekunde; `energyDrainPerSecond` ist Verbrauch je lebendem Tier und Simulationssekunde. Beide Raten werden auf 60 Ticks verteilt, auch während Bewegung, Warten, Transfer und Teilung. Die bisherigen numerischen Grundwerte werden als Sekunderaten übernommen: Wachstum 1 und Verbrauch 2. `energyTransferPerSecond` ist Bruttoenergie je Simulationssekunde (Standard 8), getrennt vom Verbrauch. 4 übertragene Energie benötigt damit 30 Ticks, 8 benötigt 60 Ticks. Wirkungsgrade bestimmen, wie viel Nahrung dafür entnommen wird. Das bei Kontakt festgelegte Aufnahmebudget wird durch laufenden Verbrauch nicht nachträglich erhöht.
 
-Mit **Tempo** lässt sich die Wiedergabe direkt zwischen **0,25, 0,5, 1, 2, 4 und 8 Schritten pro Sekunde** umstellen. 0,25 bedeutet vier Sekunden pro vollständigem Schritt, 8 bedeutet eine Achtelsekunde. Der Startwert kommt aus `stepsPerSecond` (Standard 2); ein abweichender Konfigurationswert steht zusätzlich zur Auswahl. Änderungen wirken sofort auf die verbleibende Animationszeit, ohne die Zwischenform zu versetzen. Die Auswahl bleibt bei Pause und Einzelschritt bedienbar. **Neustart** behält das gewählte Tempo, Neuladen der Seite verwendet wieder den Konfigurationswert.
+`speedMultiplier` (Standard 2) ändert die Realzeitgeschwindigkeit. Bewegungs- und Wartezeiten sind positive ganze Tickzahlen. `width`/`height` bestimmen das begrenzte Wabenfeld, `grassMax` das Grasmaximum. Jede Art hat `initialCount`, `maxEnergy`, `energyDrainPerSecond` und `divisionFraction`. Ein eingeschlossener Grasfresser muss langfristig netto Energie verlieren: Wachstum mal Graswirkungsgrad muss kleiner als sein Verbrauch sein.
 
-Bei einer Teilung schwillt die volle Form kurz an und geht sichtbar in zwei Hälften über. Sind mindestens zwei Nachbarzellen frei, schreiten beide Hälften in unterschiedliche freie Zellen; bei nur einer freien Nachbarzelle bleibt eine Hälfte am Ursprung. Ohne freie Zelle fällt die Teilung aus. Beide Hälften erhalten dieselbe halbe Energie. Die Grasfresserteilung ist vor dem Jagdkontakt abgeschlossen, Karnivoren teilen erst nach dem Nachziehen ihres Körpers. Auch Teilungsbewegungen lassen sich pausieren und fortsetzen.
-
-Eine hinausziehende Grasfresserhälfte frisst bei Ankunft sofort das Gras ihrer neuen Zelle und gewinnt daraus Energie bis zum Maximum. Daher können die Hälften nach ihrer zunächst gleichmäßigen Energieaufteilung unterschiedliche Energie besitzen. Das Gras bleibt während des Hinausschreitens sichtbar und verschwindet beim Ankommen. Es entstehen weder ein zweiter Energieverbrauch noch eine weitere Teilung im selben Schritt.
-
-Zum gezielten Beobachten gibt es bei laufendem Entwicklungsserver die [Teilung in Zeitlupe](http://localhost:5173/scripts/grass-division-demo.html): sechs Sekunden pro Schritt, manuell einstellbarer Fortschritt und direkte Sprünge vor beziehungsweise nach die Ankunft. Sie zeigt beide Platzfälle mit Gras- und Energiewerten.
-
-## Konfiguration
-
-Die Simulationsparameter stehen in `src/config.ts` als `defaultConfig`. Die Datei kann vor dem Start angepasst werden. `width` und `height` sind Spalten und Reihen (Standard 30 × 20). `grassMax` ist die Grasmenge pro Zelle, `grassGrowth` deren Zuwachs **pro logischem Schritt**. `grassEfficiency` wandelt gefressenes Gras in Grasfresserenergie um; `preyEfficiency` wandelt die aktuelle Energie einer Beute in Karnivorenenergie um. Die beiden Art-Konfigurationen enthalten getrennte `initialCount`, `maxEnergy`, `energyDrain` (Verbrauch **pro Schritt**) und `divisionFraction` (Anteil am Maximalwert). Alle Zellen starten mit halbvollem Gras, beide Arten mit halber Maximalenergie. `stepsPerSecond` ändert nur die Wiedergabegeschwindigkeit, nicht die Energieregeln. Die Konfiguration wird vor dem Start geprüft; ein eingesperrter Grasfresser muss netto Energie verlieren.
+Entwicklerhinweise und Browserprüfungen stehen in [docs/animation.md](docs/animation.md). Die [Zeitlupenansicht](http://localhost:5173/scripts/grass-division-demo.html) zeigt reproduzierbare lokale Bewegungen mit Tickregler.

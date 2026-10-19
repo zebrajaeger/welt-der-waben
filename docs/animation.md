@@ -1,54 +1,51 @@
-# Animationsdaten
+﻿# Tickzustand und Animation
 
-`transition(state, config, random)` in `src/simulation.ts` liefert denselben Endzustand und verwendet dieselben Zufallsaufrufe wie `step`. Eingaben bleiben unverändert. `step` berechnet weiterhin nur den Regelzustand; Animationen entscheiden keine Ziele oder Konflikte.
+Die Simulation hat eine einzige Regeluhr: `tick(state, config, random)` rechnet exakt 1/60 Simulationssekunde weiter. Der Aufruf verändert die Eingabe nicht. `initialize` erzeugt eindeutige Startpositionen, halbe Energien und über mehrere Ticks verteilte Bereitschaften. Eine Bildabfrage zieht keine Zufallszahlen.
 
-Ein Übergang enthält unabhängige Kopien von `before`, `grown` (nach Graswachstum), `fed` (nach Grasfresseraufnahme und Verbrauch, vor Teilung), `herbivores` (nach der Grasfresserteilung), `hunted` (nach Jagd, vor Karnivorenverbrauch), `drained` (nach Karnivorenverbrauch, vor Teilung) und `after`. Diese Kopien halten auch Bewohner fest, die später verschwinden.
+## Tickreihenfolge
 
-`events` enthält nur tatsächlich aufgelöste Aktionen in Phasenreihenfolge:
+1. Gras wächst um seine Sekunderate / 60; alle lebenden Tiere verlieren ihre Verbrauchsrate / 60. Tote und ihre Reservierungen werden entfernt.
+2. Laufende Transfers verbuchen höchstens die Transferrate / 60. Das feste Kontaktbudget, freie Kapazität und verbleibende Quelle begrenzen die letzte Teilmenge.
+3. Fällige Kontakte, Ankünfte und Geburten schließen lokal ab. Freigegebene Zellen sind erst im Folgetick neu verfügbar.
+4. Bereite Bewohner machen Vorschläge aus demselben Belegungsbild. Ein injizierter Zufallsstrom entscheidet Gleichstände und Konflikte; neugeborene Hälften starten nicht erneut im selben Tick.
 
-- `move`: Tier vor dem Zug und Zielzelle.
-- `graze`: Grasfresser vor Aufnahme, Zellindex, Grasmenge, gekappte Energie nach Aufnahme und `afterDivision`; nur bei tatsächlich vorhandenem Gras. Die Aufzeichnung verändert weder Regeln noch Zufallsziehungen.
-- `hunt`: Karnivor vor der Jagd, Beute an ihrer aktuellen Position samt aktueller Energie und `energyAfter` vor Verbrauch; die Beute-ID verknüpft Kontakt und Verschwinden eindeutig.
-- `birth`: Eltern-ID, volle Ausgangsform (`parentBefore`), bisherige Hälfte nach der Verteilung (`parentAfter`), Nachwuchs mit `activeFrom` und Index der Ursprungszelle (`sourceCell`).
-- `death`: Tier nach dem tödlichen Verbrauch.
+## Zustände und Reservierungen
 
-Die Hälften im Geburtsereignis enthalten die gleichmäßig aufgeteilte Energie **vor** der Grasaufnahme an ihren Zielzellen. Die Snapshots `herbivores`, `hunted` und `after` enthalten anschließend die durch Zielgras erhöhte Energie. Die Darstellung zeigt zuerst die Halbierung, dann Grasaufnahme am gehaltenen Spitzenkontakt und erst danach das Nachziehen. Eine stehenbleibende Hälfte frisst nicht noch einmal; Verbrauch und Teilungsentscheidung werden nicht wiederholt. Karnivoren erhalten Beuteenergie auf Grundlage dieser bereits gefütterten Hälften.
+`State.tick` ist ganzzahlig. Bewohner führen `readyAt`, Ausrichtung und optional eine lokale Aktion. `reservations` ordnet Ziel- und Teilungsursprungszellen ihren lebenden Besitzern zu. Normale Züge halten den Ursprung bis zur Ankunft belegt. Nach einer Teilung sind die Zielzellen je einer Hälfte zugeordnet; ein gemeinsamer Herkunftsverschluss bleibt bis zum letzten Hinausziehen erhalten. Das ist keine doppelte logische Belegung.
 
-Die Ereignisse tragen Kopien und teilen keine veränderlichen Tierobjekte mit Snapshots. Geburt und Jagd erzeugen keine zusätzlichen Zufallsziehungen für die Darstellung. Die Reihenfolge erlaubt insbesondere das Anzeigen eines Grasfressers, der erst zieht oder geboren wird und danach im selben Schritt gefressen wird.
+Lokale Teilung reserviert zuerst atomar sämtliche Ziele. Nach dem Anschwellen wird die dann verbleibende Energie exakt halbiert. Ab Geburt verbrauchen beide Hälften Zeitenergie; jede kann nach ihrer eigenen Ankunft und Wartezeit weiterhandeln. Tod vor Geburt erzeugt keinen Nachwuchs; ein verlorener Konflikt halbiert keine Energie.
 
-## Geometrie und Zeit
+`capturedBy` bezeichnet einen exklusiven Jäger. Eine beanspruchte Beute vollendet ihren laufenden Zug, beginnt danach jedoch keinen neuen. Der Vorstoß richtet sich nach ihrer geplanten lokalen Ankunft. Stirbt ein Partner, werden Sperren bereinigt. Nach einer teilweisen Mahlzeit wird die Beute freigegeben und der Jäger zieht zurück.
 
-`planAnimation` verbindet die Ereignisse mit der zuletzt sichtbaren Ausrichtung je Tier-ID. `sampleAnimation(plan, t)` liefert ein Bild für die normierte Zeit `0..1`; erneutes Abfragen verändert den Plan nicht. Spitzenkoordinaten verwenden den Hex-Radius als Einheit und werden erst beim Rendern in Pixel umgerechnet. Resize verändert damit die Projektion und erhält den Fortschritt.
+## Energieübertragung
 
-| Bewegung | Erste Spitze zum Zentrum | Zweite Spitze | Dritte Spitze | Erste Spitze zur Endposition |
-| --- | --- | --- | --- | --- |
-| Grasfresser | 0–0,20 | 0,30–0,40 | 0,40–0,50 | 0,30–0,50 |
-| Karnivor | 0,30–0,50 | 0,65–0,825 | 0,825–1 | 0,65–1 |
+Bei Kontakt gilt das feste Budget `Q = min(Nahrung * Wirkungsgrad, Maximum - Energie)`. Pro Tick werden höchstens `energyTransferPerSecond / 60` Energie übertragen und dafür `q / Wirkungsgrad` Nahrung entnommen. Wirkungsgrad null entnimmt nichts. Verbrauch ist separat; neue Kapazität durch Verbrauch erhöht das Budget nicht. Wachstum läuft weiter und vergrößert die Mahlzeit nicht. Überschüssiges Gras und überlebende Restbeute bleiben erhalten.
 
-Erfolgreiche Jäger halten alle drei Spitzen von `t=0,50` bis `0,65` in ihrer Kontaktpose für das Aussaugen. `Motion.followStart` gibt den Beginn des Nachziehens an; bei gewöhnlichen Bewegungen entspricht er dem Spitzenkontakt. Bei anschließender Karnivorenteilung ziehen die zweite Spitze von `0,65–0,725` und die dritte von `0,725–0,80` nach; die führende Spitze bewegt sich parallel von `0,65–0,80` zur Endposition. Das Teilungsfenster `0,80–1` bleibt erhalten.
+Bruttotransfer 4 bei Rate 8 braucht 30 Ticks; 8 braucht 60 Ticks. Der letzte Tick überträgt nur die Restmenge. Bei Tod oder fehlender Quelle endet eine Interaktion früher; es gibt keinen pauschalen Restbonus.
 
-Bei `t=0,50` sind die Grasfresser angekommen. Ihre Energieabrechnung, Zielgrasaufnahme und Geburten sind abgeschlossen; dann treffen die erfolgreichen Karnivorenspitzen ein. Bis `t=0,65` wird die Beute ausgesaugt: Ihre Energie sinkt linear auf null und alle Spitzen schrumpfen relativ zu ihrem Zellzentrum auf null. Die Karnivorenenergie steigt gleichzeitig linear vom Jagdausgangswert zum bereits gekappten `energyAfter`. Wirkungsgrad und Energieobergrenze bleiben damit erhalten, auch bei Energiegewinn null. Erst bei `t=0,65` verschwindet die Beute vollständig und das Nachziehen beginnt. Energieverbrauch und Geburten der Karnivoren schließen wie bisher danach ab. `Playback.state` enthält bis `t=1` den letzten vollständig abgeschlossenen Schritt für die Statusanzeige.
+## Lokale Geometrie und Wiedergabe
 
-`AnimationPlan.hunts` enthält ausschließlich aufgelöste Jagdereignisse. Zwischen Kontakt und Aussaugende ergänzt `sampleAnimation` sichtbare Beutekopien und interpoliert Jägerenergien, ohne Ereignisse oder Snapshots zu verändern. Wiederholtes, rückwärts gerichtetes oder ausgelassenes Sampling überträgt keine Energie zusätzlich. Die endgültige Beuteform aus Bewegung oder Teilung bleibt bis Kontakt erhalten und wird danach zum Kontaktzentrum skaliert. Am Aussaugende wird sie aus Zustand und Shapes des Frames entfernt, sodass auch die bei Nullenergie sonst üblichen Striche nicht übrig bleiben. Der vorhandene Renderer verwendet diese Spitzen unverändert.
+`sampleAnimation(state)` ist eine reine Projektion. Jede Travel-Aktion besitzt absolute Kontakt-, Transfer- und Nachziehticks. Beim Transfer halten alle Spitzen. Nach vollständiger Aufnahme ziehen die beiden anderen einzeln nach, während die erste zur Endposition geht. Teilungshälften haben eigene Aktionen und können unterschiedlich lange saugen. Stirbt Beute vor Kontakt, speichert der Rückzug die exakt erreichte Spitzenform. Überlebende Restbeute wächst während des Rückzugs kontinuierlich zur normalen Radiusform zurück; ihre reduzierte Energie bleibt erhalten.
 
-Für teilende Tiere wird die normale Bewegung verkürzt: Grasfresser kommen bei `t=0,30` an und teilen bis `0,50`; Karnivoren saugen nach dem Jagdkontakt bis `0,65` aus, ziehen bis `0,80` nach und teilen bis `1`. Das Teilungsfenster beginnt mit kurzem Anschwellen der vollen Form, danach entstehen überlagert die beiden Formen und schreiten nacheinander mit ihren Spitzen hinaus. Bei Grasfressern sinkt die angezeigte Energie bis zum Spitzenkontakt zum halben Wert und steigt während der Grasaufnahme wieder; Karnivoren teilen ihre Energie wie bisher während der gesamten Teilung auf. Die Endausrichtung beider Hälften bleibt erhalten. Bei einer einzigen freien Zelle bleibt die bisherige Hälfte stehen; bei mindestens zwei ziehen beide aus dem Ursprung hinaus. Die Zielpaare werden zufällig und atomar ohne erneuten Versuch bei Konflikten aufgelöst.
+`Playback` akkumuliert aktive Realzeit × Zeitfaktor × 60. Bruchteile bleiben erhalten. Ein Frame rechnet höchstens 30 Ticks, ein Delta höchstens 250 ms Realzeit und der Akkumulator hält höchstens 120 offene Ticks. Tabpausen erzeugen keine unbeschränkte Nachholschleife. Unter Last darf die Realzeitwiedergabe langsamer werden, aber nach gleicher Tickzahl ist der Regelzustand identisch. Einzelschritt rechnet einen Tick und bleibt pausiert; Neustart verwirft Welt, Aktionen und Reservierungen, behält Pausemodus und Zeitfaktor.
 
-`Playback.tick(timestamp)` benötigt monotone Zeitstempel in Millisekunden. Pause und Fortsetzen rechnen nur aktive Zeit an. Pro Takt entsteht genau ein Plan; ein verspätetes Bild schließt höchstens einen Takt ab und erzeugt keine Nachholwarteschlange. `frame` und `progress` sind lesend abfragbar. Die Browseranbindung verwaltet einen Frame-Callback, entsorgt ihn bei HMR und entfernt ihre Event-Listener.
+## Browserprüfung
 
-`Playback.stepsPerSecond` zeigt das aktuelle Laufzeittempo. `setStepsPerSecond(value, timestamp)` akzeptiert positive endliche Werte: Bis zum Änderungszeitpunkt wird aktive Zeit mit dem bisherigen Tempo abgerechnet, anschließend nur neue Zeit mit dem neuen Tempo. Der normierte Fortschritt wird akkumuliert und springt beim Setzen nicht. Die Methode startet keinen neuen Übergang und verändert weder Regelkonfiguration noch Zufallsfolge. Ungültige Werte werden vor jeder Zeitabrechnung abgewiesen. Pause und Einzelschritt behalten ihren Modus; `reset` behält das gewählte Tempo. Eine neu konstruierte Steuerung beginnt wieder mit dem Konfigurationswert.
-
-## Prüfung im Browser
-
-Bei laufendem Vite-Server kann eine vorhandene Playwright-Installation verwendet werden:
+Bei laufendem Vite-Server:
 
 ```sh
 node scripts/browser-check.mjs /pfad/zu/playwright/index.mjs /pfad/zu/chromium
 ```
 
-Der Browserpfad ist optional, wenn die zur Playwright-Version passende Browserinstallation vorhanden ist. Ein optionales viertes Argument ersetzt `http://localhost:5173`. Der Check prüft Bedienung und Größenwechsel, erzeugt reproduzierbare Zwischenbilder in `.browser-check/animation-poses.png` sowie `.browser-check/division-poses.png` und zeichnet 600 vollständige Übergänge mit insgesamt 4.200 Zwischenbildern. Er prüft dabei Teilungen, Belegung, Energie, abgeschlossene Schrittzahlen und die Übereinstimmung von Endbild und Statuszustand. Eine kurzzeitige CSS-Änderung prüft Hot Reload und wird anschließend wiederhergestellt. `.browser-check/` ist von Git ausgeschlossen.
+Ein optionales viertes Argument ersetzt die lokale Basisadresse. Der Lauf prüft Tempooptionen, Tastatur/Mobilansicht, Einzeltick, Pause, Neustart und eigene Startkonfiguration. Die vier Zeitlupenfälle zeigen kurze/lange Grasaufnahme, gleichzeitige Teilung und überlebende Restbeute. Bilder stehen unter `.browser-check/local-actions-*.png`. Der Browserlauf prüft 36.000 Ticks, zeichnet 1.200 Zwischenbilder, misst 8×-Frames und schreibt `.browser-check/async-metrics.json`. CSS- und JS-Hot-Reload werden geprüft und die vorübergehenden Änderungen im finally-Block zurückgenommen. Eine einzelne Klickaktion nach JS-Aktualisierung muss weiterhin genau einen Tick erzeugen.
 
-Der Browsercheck prüft zusätzlich Aussaugen bei 0,25 und 8 Schritten/s, pausierte und laufende Tempoänderungen sowie Größenwechsel während der Haltephase. Die Bilder in `.browser-check/predation-phases.png` und `.browser-check/predation-mobile.png` zeigen Kontakt, halbe Übertragung, restloses Aufzehren und Nachziehen einschließlich gejagter Teilungshälften.
+## Referenzmessung der Tickumstellung
 
-Grasfresser halten ihre erste Spitze von `0,20–0,30` im Graszentrum. Das Grassymbol schrumpft währenddessen kontinuierlich und die Energie steigt bis zum aufgezeichneten Aufnahmewert. Vor einer Teilung ist die Bewegung auf `0–0,30` verkürzt: Kontakt `0,12`, Aussaugende `0,18`, zweite Spitze `0,24`. Hinausziehende Hälften halten von `0,398–0,432` und ziehen anschließend bis `0,50` nach. Die verbleibende Hälfte frisst nicht erneut. Stationäre Grasfresser nehmen in ihrer eigenen Zelle von `0,20–0,30` auf. Verbrauch bleibt am regulären Phasenabschluss; alle Endzustände bleiben identisch. `AnimationPlan.grazing` enthält die aus Ereignissen und Bewegungen bestimmten Aufnahmefenster.
+Lokaler Prüflauf vom 19.10.2026, jeweils 36.000 Ticks mit Invariantenprüfung und zusätzlicher identischer Wiedergabe bei 1× und 8×:
 
-Die Zeitlupenansicht unter `/scripts/grass-division-demo.html` zeigt über den Regler auch halbe Grasaufnahme. Die Browserbilder `grass-before-arrival.png`, `grass-suction-middle.png` und `grass-after-arrival.png` dokumentieren Kontakt, kontinuierliche Übertragung und vollständige Aufnahme vor dem Nachziehen.
+| Fall | Startpopulation | Maximale Population | Mittlere Tickzeit einschließlich Invariantenprüfung |
+| --- | --- | --- | --- |
+| Standardfeld 30 × 20 | 10 + 10 | 383 | 0,46 ms |
+| Dichtes Feld 30 × 20 | 100 + 80 | 405 | 0,58 ms |
+
+Der separate Browserlauf erreichte 408 Bewohner und zeichnete 1.200 Zwischenbilder in 24,36 Sekunden Gesamtprüfzeit. Mittlere Zeichenzeit: 7,23 ms; längster gemessener Zeichenaufruf: 58,9 ms. Im kurzen 8×-Stresstest lag der längste kombinierte Tick-/Zeichenaufruf bei 72,4 ms. Das sind Messwerte dieses Rechners unter paralleler Testlast, keine garantierte Bildrate. Die feste Nachholgrenze schützt weiterhin vor unbeschränkter Arbeit pro Frame. Rohwerte stehen in `.browser-check/async-metrics.json`; `tests/long-run.test.ts` protokolliert beide Kernläufe mit reproduzierbaren Seeds.

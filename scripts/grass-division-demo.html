@@ -1,75 +1,74 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="de">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Teilung in Zeitlupe</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Unabhängige Vorgänge in Zeitlupe</title>
 <style>
-  :root { color-scheme: dark; font: 16px system-ui; background: #101c1b; color: #e8f1df; }
-  body { max-width: 1000px; margin: auto; padding: 24px; }
-  h1 { font-size: 28px; } p { line-height: 1.5; }
-  .controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 24px 0; }
-  button { font: inherit; padding: 8px 12px; cursor: pointer; } input { flex: 1; min-width: 180px; }
-  section { padding: 16px; margin: 16px 0; border: 1px solid #35534a; border-radius: 10px; }
-  canvas { display: block; width: 100%; } output { font-variant-numeric: tabular-nums; }
+:root { color-scheme:dark; font:15px system-ui; background:#101c1b; color:#e8f1df; }
+body { max-width:1040px; margin:auto; padding:20px; } h1 { font-size:26px; } p { line-height:1.5; }
+.controls { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin:20px 0; }
+button { font:inherit; padding:8px; } input { min-width:160px; flex:1; }
+#cases { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr)); gap:16px; }
+section { padding:14px; border:1px solid #35534a; border-radius:10px; min-width:0; } h2 { font-size:19px; }
+canvas { width:100%; display:block; } .details { font-size:13px; font-variant-numeric:tabular-nums; min-height:75px; }
 </style>
-<h1>Teilung in Zeitlupe</h1>
-<p>Ein Simulationsschritt dauert hier sechs Sekunden. Die erste Spitze erreicht das Graszentrum und hält dort: Das Gras schrumpft, während die Energie der Hälfte steigt. Erst danach ziehen die übrigen Spitzen nach. Der Regler zeigt auch die Zwischenzustände.</p>
-<div class="controls">
-  <button id="play">Abspielen</button><button id="before">Vor Aussaugen</button><button id="after">Nach Aussaugen</button>
-  <label for="time">Fortschritt</label><input id="time" type="range" min="0" max="1000" value="300"><output id="position"></output>
-</div>
+<h1>Unabhängige Vorgänge in Zeitlupe</h1>
+<p>Alle Beispiele zeigen denselben Simulationstick. Kurze und lange Mahlzeiten enden zu unterschiedlichen Zeiten; eine Teilung läuft parallel. Gras wächst in jedem Tick. Überschüssige Nahrung bleibt erhalten, und bei überlebender Beute zieht der Jäger zurück.</p>
+<div class="controls"><button id="play">Abspielen</button><button data-tick="13">Kontakt</button><button data-tick="32">Übertragung</button><button data-tick="60">Später</button>
+<label for="time">Tick</label><input id="time" type="range" min="0" max="240" value="32"><output id="position"></output></div>
 <div id="cases"></div>
 <script type="module">
-  import { defaultConfig } from '/src/config.ts';
-  import { transition } from '/src/simulation.ts';
-  import { planAnimation, sampleAnimation } from '/src/animation.ts';
-  import { layout, render } from '/src/render.ts';
-  const cases = [2, 3].map(width => {
-    const config = { ...defaultConfig, width, height: 1,
-      herbivore: { ...defaultConfig.herbivore, initialCount: 0 }, carnivore: { ...defaultConfig.carnivore, initialCount: 0 } };
-    const state = { step: 0, nextId: 100, grass: Array(width).fill(10), animals: [
-      { id: 1, column: 0, row: 0, species: 'herbivore', energy: 19, activeFrom: 1 },
-    ] };
-    const section = document.createElement('section'); section.dataset.case = width === 2 ? 'one' : 'two';
-    const heading = document.createElement('h2'); heading.textContent = width === 2 ? 'Eine freie Zelle: Eine Hälfte bleibt' : 'Zwei freie Zellen: Beide Hälften ziehen hinaus';
-    const canvas = document.createElement('canvas'), details = document.createElement('p');
-    const grass = document.createElement('span'); grass.className = 'grass';
-    const energy = document.createElement('span'); energy.className = 'energy';
-    details.append(grass, document.createElement('br'), energy); section.append(heading, canvas, details);
-    document.querySelector('#cases').append(section);
-    const field = layout(config, 900, 220); canvas.width = Math.ceil(field.width); canvas.height = Math.ceil(field.height);
-    return { config, plan: planAnimation(transition(state, config, () => 0)), context: canvas.getContext('2d'), field, grass, energy };
-  });
-  const slider = document.querySelector('#time'), play = document.querySelector('#play');
-  let time = 0.3, playing = false, lastTime;
-  function draw() {
-    slider.value = Math.round(time * 1000);
-    document.querySelector('#position').textContent = `t = ${time.toFixed(3)}`;
-    for (const item of cases) {
-      const frame = sampleAnimation(item.plan, time);
-      render(item.context, frame.state, item.config, item.field, frame.shapes);
-      item.grass.textContent = `Gras je Zelle: ${frame.state.grass.map(value => Number(value.toFixed(2))).join(' · ')}`;
-      item.energy.textContent = `Energie: ${frame.state.animals.map(animal => animal.energy.toFixed(1)).join(' · ')}`;
-    }
-    play.textContent = playing ? 'Pause' : 'Abspielen';
+import { defaultConfig } from '/src/config.ts';
+import { tick } from '/src/simulation.ts';
+import { sampleAnimation } from '/src/animation.ts';
+import { layout, render } from '/src/render.ts';
+const resident = (id,column,species='herbivore',energy=5) => ({id,column,row:0,species,energy,angle:-Math.PI/2,readyAt:0});
+const config = { ...defaultConfig, width:3, height:1,
+  herbivore:{...defaultConfig.herbivore,initialCount:0}, carnivore:{...defaultConfig.carnivore,initialCount:0} };
+const definitions = [
+  { id:'short', title:'Kurze Mahlzeit', grass:[0,2,0], animals:[resident(1,0)] },
+  { id:'long', title:'Lange Mahlzeit', grass:[0,8,0], animals:[resident(1,0)] },
+  { id:'division', title:'Teilung mit zwei Hälften', grass:[4,0,4], animals:[resident(1,1,'herbivore',19)] },
+  { id:'partial', title:'Teilweise Jagd: Beute überlebt', grass:[0,0], width:2,
+    animals:[resident(2,0,'carnivore',18),{...resident(1,1,'herbivore',10),readyAt:100000}] },
+];
+const cases = definitions.map(def => {
+  const cfg = { ...config, width:def.width ?? config.width };
+  let state = { tick:0,nextId:100,animals:def.animals,grass:def.grass,reservations:{},released:{} };
+  const history = [state];
+  let seed=37; const random=()=>{ seed=(Math.imul(seed,1664525)+1013904223)>>>0; return seed/4294967296; };
+  for(let i=0;i<240;i++){ state=tick(state,cfg,random); history.push(state); }
+  const host=document.createElement('section'); host.dataset.case=def.id;
+  const heading=document.createElement('h2'); heading.textContent=def.title;
+  const canvas=document.createElement('canvas'), details=document.createElement('p'); details.className='details';
+  host.append(heading,canvas,details); document.querySelector('#cases').append(host);
+  return { cfg,history,canvas,details };
+});
+const slider=document.querySelector('#time'), play=document.querySelector('#play');
+let current=32, playing=false, lastTime, accumulated=0;
+const phases={approach:'Vorstoß',transfer:'saugt',follow:'Nachziehen',return:'Rückzug'};
+function draw(){
+  slider.value=String(current); document.querySelector('#position').textContent=`${current} · ${(current/60).toFixed(2)} s`;
+  for(const item of cases){
+    const state=item.history[current], frame=sampleAnimation(state), field=layout(item.cfg,item.canvas.parentElement.clientWidth-28,180);
+    item.canvas.width=Math.ceil(field.width); item.canvas.height=Math.ceil(field.height);
+    render(item.canvas.getContext('2d'),frame.state,item.cfg,field,frame.shapes);
+    const description=state.animals.map(a=>`${a.species==='carnivore'?'K':'G'}${a.id}: ${a.energy.toFixed(2)} · ${a.action?.type==='travel'?phases[a.action.phase]:a.action?.type==='divide'?'Teilung':'wartet'}`).join(' | ');
+    item.details.textContent=`Gras: ${state.grass.map(g=>g.toFixed(2)).join(' · ')}. ${description}`;
   }
-  function frame(now) {
-    if (!playing) return;
-    if (lastTime !== undefined) time = Math.min(1, time + (now - lastTime) / 6000);
-    lastTime = now;
-    if (time >= 1) playing = false;
-    draw(); if (playing) requestAnimationFrame(frame);
-  }
-  function jump(value) { playing = false; lastTime = undefined; time = value; draw(); }
-  play.addEventListener('click', () => {
-    playing = !playing; lastTime = undefined;
-    if (playing) { if (time >= 1) time = 0; requestAnimationFrame(frame); }
-    draw();
-  });
-  slider.addEventListener('input', () => jump(Number(slider.value) / 1000));
-  const meal = cases[0].plan.grazing.find(g => g.event.afterDivision);
-  document.querySelector('#before').addEventListener('click', () => jump(meal.start));
-  document.querySelector('#after').addEventListener('click', () => jump(meal.end));
-  draw();
+  play.textContent=playing?'Pause':'Abspielen';
+}
+function animate(now){
+  if(!playing)return;
+  if(lastTime!==undefined) accumulated+=Math.min(100,now-lastTime);
+  lastTime=now;
+  while(accumulated>=50 && current<240){current++;accumulated-=50;}
+  if(current===240)playing=false;
+  draw(); if(playing)requestAnimationFrame(animate);
+}
+function jump(value){playing=false;lastTime=undefined;accumulated=0;current=value;draw();}
+play.addEventListener('click',()=>{playing=!playing;lastTime=undefined;if(playing){if(current===240)current=0;requestAnimationFrame(animate);}draw();});
+slider.addEventListener('input',()=>jump(Number(slider.value)));
+for(const button of document.querySelectorAll('[data-tick]'))button.addEventListener('click',()=>jump(Number(button.dataset.tick)));
+new ResizeObserver(draw).observe(document.querySelector('#cases'));draw();
 </script>
 </html>

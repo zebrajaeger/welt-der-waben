@@ -1,25 +1,27 @@
 import { expect, it, vi } from 'vitest';
 import { defaultConfig } from '../src/config';
 import { center, drawAnimal, drawShape, layout, render } from '../src/render';
-import { makeMotion, planAnimation, sampleAnimation, sampleMotion } from '../src/animation';
-import { initialize, transition } from '../src/simulation';
-import { movingPrey, testConfig } from './fixtures';
+import { makeMotion, sampleAnimation, sampleMotion } from '../src/animation';
+import { initialize, tick } from '../src/simulation';
+import { advance, fastConfig, resident, testConfig, testState } from './fixtures';
 
 function recordingContext() {
   return { beginPath: vi.fn(), closePath: vi.fn(), moveTo: vi.fn(), lineTo: vi.fn(),
     stroke: vi.fn(), fill: vi.fn(), ellipse: vi.fn(), clearRect: vi.fn(),
     lineWidth: 0, strokeStyle: '', fillStyle: '', lineJoin: 'round' };
 }
-it('renders shrinking prey through transfer and no prey fills or strokes after completion', () => {
-  const plan = planAnimation(transition(movingPrey(), testConfig, () => 0));
-  for (const time of [0.5, 0.575, 0.64999, 0.65, 0.75]) {
+it('renders prey during transfer and no yellow fills or strokes after removal', () => {
+  let world = testState([{ ...resident(1, 1, 0, 5), readyAt: 1000 }, resident(2, 0, 0, 5, 'carnivore')], 0, fastConfig);
+  world = advance(world, fastConfig, 3);
+  for (let i = 0; i < 6; i++) {
     const ctx = recordingContext(), colors: string[] = [];
     ctx.fill.mockImplementation(() => { colors.push(ctx.fillStyle); });
     ctx.stroke.mockImplementation(() => { colors.push(ctx.strokeStyle); });
-    const frame = sampleAnimation(plan, time);
-    render(ctx as unknown as CanvasRenderingContext2D, frame.state, testConfig, layout(testConfig, 800, 500), frame.shapes);
-    expect(colors.includes('#ffd285')).toBe(time < 0.65);
+    const frame = sampleAnimation(world);
+    render(ctx as unknown as CanvasRenderingContext2D, frame.state, fastConfig, layout(fastConfig, 800, 300), frame.shapes);
+    expect(colors.includes('#ffd285')).toBe(world.animals.some(a => a.id === 1));
     expect(colors.includes('#ff7b87')).toBe(true);
+    world = tick(world, fastConfig);
   }
 });
 it('fits every hex corner in wide and narrow canvases including single-row fields', () => {
@@ -44,7 +46,7 @@ it('fits every hex corner in wide and narrow canvases including single-row field
 });
 
 it('draws deforming tips and their centroid with unchanged colors and energy encoding', () => {
-  const animal = { id: 1, column: 0, row: 0, species: 'herbivore' as const, energy: 10, activeFrom: 1 };
+  const animal = { column: 0, row: 0 };
   const motion = makeMotion(animal, { column: 1, row: 0 });
   for (const fraction of [0.01, 0.5, 1]) for (const time of [0, 0.1, 0.2, 0.3, 0.35, 0.45, 0.5]) {
     const ctx = recordingContext(), points = sampleMotion(motion, time);

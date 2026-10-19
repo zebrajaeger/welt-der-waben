@@ -21,17 +21,15 @@ Der Browser SHALL Grasfresser und Karnivoren unterscheidbar als dreizackige Ster
 - **THEN** ist das erste als drei Striche und das zweite als gefülltes Dreieck erkennbar
 
 ### Requirement: Feste Simulationstakte und einstellbare Wiedergabe
-Der Browser SHALL die Simulation in gleich langen logischen Schritten wiedergeben. Eine konfigurierte Wiedergabegeschwindigkeit SHALL nur die Häufigkeit der angezeigten Simulationsschritte bestimmen und nicht Graswachstum oder Energieverbrauch pro Schritt verändern. Alle Animationen eines Schritts SHALL in dessen Wiedergabeintervall passen und vor dem nächsten Schritt abschließen; ausgefallene Bilder SHALL keine überlappenden oder mehrfach ausgeführten Schritte erzeugen.
+Der Browser SHALL 60 feste Ticks pro Simulationssekunde darstellen. Tempo SHALL das Verhältnis von Simulationszeit zu Realzeit bestimmen. Bewohneraktionen SHALL unabhängig beginnen und abschließen dürfen; Mahlzeiten und Teilungen SHALL keine globale Rundengrenze erzwingen. Bildausfälle SHALL keine Ticks doppelt ausführen.
 
 #### Scenario: Geschwindigkeitsänderung
-- **WHEN** die Wiedergabegeschwindigkeit erhöht wird
-- **THEN** erfolgen pro realer Zeit mehr Simulationsschritte, aber ein einzelner Schritt verwendet unveränderte Wachstums- und Verbrauchswerte
-- **AND** werden Vorstoß und Nachziehbewegungen innerhalb des kürzeren Intervalls zeitlich entsprechend skaliert
+- **WHEN** der Zeitfaktor erhöht wird
+- **THEN** verstreichen pro Realzeit mehr Ticks bei unveränderten Raten pro Simulationssekunde
 
 #### Scenario: Verzögerte Darstellung
-- **WHEN** einzelne Bilder verspätet eintreffen oder die Anwendung aus einem inaktiven Tab zurückkehrt
-- **THEN** werden fällige Ereignisse in ihrer Reihenfolge genau einmal verarbeitet und keine parallelen Simulationsübergänge begonnen
-- **AND** bleibt der resultierende Regelzustand unabhängig von Bildrate und Animationszeit
+- **WHEN** Bilder verspätet eintreffen oder die Anwendung aus einem inaktiven Tab zurückkehrt
+- **THEN** werden Ticks in ihrer Reihenfolge genau einmal verarbeitet; nach gleicher Tickzahl ist das Ergebnis bildratenunabhängig und lange Inaktivität erzeugt keine unbeschränkte Nachholschleife
 
 ### Requirement: Entwicklungsaktualisierung
 Die Entwicklungsumgebung SHALL beim Ändern von Anwendungscode im laufenden Entwicklungsprozess den Browser automatisch aktualisieren, sodass die aktuelle Darstellung ohne manuelles Neuladen sichtbar wird.
@@ -59,182 +57,167 @@ Der Browser SHALL jeden tatsächlichen Zellwechsel beider Arten durch nacheinand
 - **THEN** bleibt seine Form in seiner aktuellen Zelle und führt keine Schrittanimation aus
 
 ### Requirement: Auf die Ankunft abgestimmte Jagd
-Bei erfolgreicher Jagd SHALL die führende Karnivorenspitze das Beutezentrum bei der endgültigen Ankunft des Grasfressers erreichen. Dieser Kontakt SHALL das Aussaugen starten. Die Spitze SHALL bis zu dessen Abschluss im Zentrum und die übrigen Spitzen SHALL an ihren Ausgangspunkten bleiben. Erst danach SHALL der Karnivor nachziehen und seine führende Spitze zur Endposition bewegen. Die Animation SHALL nur den tatsächlich erfolgreichen Jäger zeigen.
+Eine erfolgreiche Jagd SHALL den Vorstoß auf die tatsächliche lokale Ankunft der Beute abstimmen. Ab Kontakt SHALL sämtliche Jägerspitzen während des Aussaugens halten. Nach vollständigem Aufzehren SHALL der Jäger nachziehen; bei überlebender Restbeute SHALL er zurückziehen. Unabhängige Jagden SHALL keine gemeinsame Kontaktzeit benötigen.
 
 #### Scenario: Bewegte Beute wird bei ihrer Ankunft aufgepiekt
-- **WHEN** ein Grasfresser in diesem Schritt zieht und anschließend gefressen wird
-- **THEN** beginnt der Vorstoß der Karnivorenspitze rechtzeitig vor der Ankunft
-- **AND** sind Spitzenkontakt, vollständige Ankunft der Beute und Beginn des Aussaugens derselbe Zeitpunkt
-- **AND** bleibt die Beute beim Kontakt sichtbar und der restliche Karnivorenkörper folgt erst nach vollständigem Aussaugen
+- **WHEN** eine beanspruchte Beute ihre laufende Bewegung beendet
+- **THEN** treffen ihre vollständige Ankunft und der vorbereitete Spitzenkontakt zusammen; die Beute bleibt während des beginnenden Aussaugens sichtbar
 
 #### Scenario: Stehende oder neugeborene Beute
-- **WHEN** die gefressene Beute stehen geblieben oder in der Grasfresserphase geboren worden ist
-- **THEN** richtet sich der Kontakt auf deren tatsächlich belegte Zelle zum gemeinsamen Jagdzeitpunkt
-- **AND** wird ausschließlich ihre tatsächlich erfolgte Teilungsbewegung gezeigt, ohne eine zusätzliche eigene Nahrungsbewegung zu erfinden
-- **AND** beginnt das Aussaugen nach abgeschlossener Teilung und Grasaufnahme dieser Hälfte
+- **WHEN** die beanspruchte Beute stillsteht oder gerade eine Teilungsbewegung abschließt
+- **THEN** richtet sich der Kontakt auf ihre tatsächliche Zelle, ohne zusätzliche Beutebewegung; laufende Grasaufnahme endet vor dem lokalen Jagdkontakt
 
 #### Scenario: Mehrere Jäger und mehrere Jagden
-- **WHEN** mehrere Karnivoren dieselbe Beute anvisieren oder unabhängige Jagden im selben Schritt stattfinden
-- **THEN** bewegt sich nur der je Beute erfolgreiche Karnivor auf diese Beutezelle
-- **AND** bleiben unterlegene Karnivoren stehen und erhalten keine Beuteenergie, und jede Beute verschwindet genau einmal nach vollständigem Aussaugen
-- **AND** laufen unabhängige Jagden einschließlich Aussaugphase auf derselben Zeitleiste parallel
+- **WHEN** mehrere Jäger dieselbe Beute beanspruchen oder unabhängige Jagden stattfinden
+- **THEN** greift nur der Reservierungsinhaber diese Beute an; unterlegene Jäger warten lokal, und unabhängige Jagden dürfen verschiedene Kontaktzeiten haben
 
 ### Requirement: Vollständige Darstellung der Ereignisfolge
-Die Darstellung SHALL Bewegungen, Grasaufnahme, Teilung, Jagd und Tod in ihrer logischen Reihenfolge abbilden. Ein später entferntes Tier SHALL bis zu seinem sichtbaren Entfernungsereignis darstellbar bleiben. Die Bewegung einer neuen Hälfte während der Teilung SHALL als Teil des Geburtsereignisses gelten und keinen eigenen aktiven Zug auslösen. Am Ende SHALL die Darstellung exakt den abgeschlossenen Simulationszustand zeigen.
+Die Darstellung SHALL Wachstum, Bewegung, Transfer, Teilung und Tod aus dem aktuellen Tickzustand und laufenden lokalen Aktionen abbilden. Restnahrung und übertragene Energie SHALL dem Regelzustand entsprechen. Teilungsbewegungen SHALL keine zusätzlichen aktiven Züge erfinden. Beendete oder abgebrochene Aktionen SHALL keine verwaisten Formen hinterlassen.
 
 #### Scenario: Beute fehlt im fertigen Zustand
-- **WHEN** ein Grasfresser nach einem Zellwechsel noch im selben Schritt gefressen wird
-- **THEN** bleiben seine Ausgangsform, seine Zielzelle und seine Ankunft bis zum Jagdkontakt darstellbar
+- **WHEN** ein Grasfresser nach einem Zellwechsel später aufgezehrt wird
+- **THEN** bleiben seine Ankunft, sein Kontakt und seine Restenergie bis zu seinem tatsächlichen Entfernen darstellbar
 
 #### Scenario: Tod und Teilung nach einer Bewegung
-- **WHEN** ein Tier nach seinem Zug durch Energieverbrauch stirbt oder Nachwuchs erzeugt
-- **THEN** verschwindet es beziehungsweise erscheint der Nachwuchs erst am entsprechenden Phasenabschluss
-- **AND** richtet sich eine Teilung nach einer Jagd nach der neuen Karnivorenposition
+- **WHEN** ein Tier während einer eigenen Aktion stirbt oder nach deren Ende teilt
+- **THEN** verschwindet es beim tatsächlichen Tod beziehungsweise beginnt die Teilung am lokalen Teilungszeitpunkt und an seiner aktuellen Position
 
 ### Requirement: Sichtbare Teilung eines vollen Bewohners
-Eine erfolgreiche Teilung SHALL den vollen Bewohner zeigen und daraus kontinuierlich zwei Hälften entstehen lassen. Jede hinausziehende Hälfte SHALL mit der Spitzenbewegung in ihre Nachbarzelle schreiten. Bei nur einer freien Zelle SHALL eine Hälfte im Ursprung bleiben. Die Energieform SHALL zuerst die Halbierung zeigen. Zielgras SHALL ab Spitzenkontakt kontinuierlich verschwinden und die Energie der Hälfte erhöhen. Erst nach vollständiger Aufnahme SHALL diese ihren Schritt vollenden.
+Eine lokale Teilung SHALL aus einem vollen Bewohner kontinuierlich zwei Hälften entstehen lassen. Hinausziehende Hälften SHALL ihre reservierten Nachbarn mit Spitzenbewegung erreichen; bei einem freien Nachbarn SHALL eine Hälfte bleiben. Halbierung und jeweilige Grasaufnahme SHALL getrennt sichtbar sein. Eine lange Mahlzeit einer Hälfte SHALL unbeteiligte Bewohner nicht aufhalten.
 
 #### Scenario: Zwei freie Nachbarn
-- **WHEN** ein Bewohner erfolgreich teilt und zwei unterschiedliche freie Nachbarzellen zugewiesen erhält
-- **THEN** entstehen beide Formen sichtbar aus dem vollen Bewohner und ziehen in die zwei verschiedenen Richtungen auseinander
-- **AND** ist die Ursprungszelle am Ende frei
+- **WHEN** eine Teilung zwei unterschiedliche Nachbarn reserviert
+- **THEN** ziehen beide Formen in diese Richtungen auseinander und geben nach vollständigem Hinausziehen den Ursprung frei
 
 #### Scenario: Nur ein freier Nachbar
-- **WHEN** eine Teilung genau eine freie Nachbarzelle verwenden kann
-- **THEN** bleibt eine Hälfte in der Ursprungszelle, während die andere sichtbar aus ihr in die freie Nachbarzelle schreitet
+- **WHEN** genau eine freie Nachbarzelle reserviert werden kann
+- **THEN** bleibt eine Hälfte am Ursprung und die andere schreitet in diese Zelle
 
 #### Scenario: Kein Platz oder verlorener Teilungskonflikt
 - **WHEN** keine Teilung zustande kommt
-- **THEN** werden weder eine zweite Form noch eine Teilungsbewegung dargestellt
+- **THEN** werden weder zweite Formen noch Teilungsbewegungen oder halbierte Energie dargestellt
 
 #### Scenario: Geteilte Grasfresser als Beute
-- **WHEN** eine der beiden Grasfresserhälften in demselben Schritt gefressen wird
-- **THEN** vollendet diese Hälfte zuerst ihre Teilungsbewegung
-- **AND** erreicht die Karnivorenspitze genau bei ihrer endgültigen Ankunft deren tatsächliche Zelle
+- **WHEN** eine angekommene Hälfte unabhängig von der anderen lokal gejagt wird
+- **THEN** vollendet sie ihre eigene Bewegung vor dem Kontakt; die andere Hälfte muss ihre Mahlzeit nicht auf eine gemeinsame Jagdphase abstimmen
 
 #### Scenario: Unterbrochene Teilung
-- **WHEN** während der Teilungsbewegung pausiert, die Fenstergröße geändert oder neu gestartet wird
-- **THEN** gelten dieselben Regeln für Fortschritt, Projektion und Verwerfen des alten Übergangs wie bei anderen Bewegungen
+- **WHEN** während einer Teilung pausiert, die Fenstergröße geändert oder neu gestartet wird
+- **THEN** bleiben Fortschritt und Projektion erhalten beziehungsweise wird bei Neustart die gesamte alte Teilung verworfen
 
 ### Requirement: Steuerbare unterbrechbare Animation
-Pause SHALL den sichtbaren Animationsfortschritt einfrieren und Weiter SHALL ihn ohne Sprung fortsetzen. Einzelschritt SHALL genau einen vollständigen animierten Simulationsschritt abspielen und danach pausieren; weitere Einzelschritt-Aufrufe währenddessen SHALL keinen zusätzlichen Schritt starten. Neustart SHALL einen laufenden Übergang verwerfen. Größenänderungen SHALL dessen Fortschritt und Ereignisreihenfolge erhalten.
+Pause SHALL Tickfortschritt und sämtliche sichtbaren Vorgänge einfrieren; Weiter SHALL ohne Sprung fortsetzen. Einzelschritt SHALL genau einen Tick ausführen und danach pausieren, auch wenn Aktionen noch laufen. Neustart SHALL alle Aktionen und Reservierungen verwerfen. Größenänderungen SHALL Fortschritte erhalten.
 
 #### Scenario: Pause mitten in einem Schritt
-- **WHEN** während einer Spitzenbewegung pausiert und später fortgesetzt wird
-- **THEN** bleiben Form, Beutesichtbarkeit und Fortschritt während der Pause unverändert
-- **AND** setzt die Bewegung an derselben Stelle fort
+- **WHEN** während einer Bewegung pausiert und später fortgesetzt wird
+- **THEN** bleiben Formen, Restnahrung, Energien und Tickzahl eingefroren und setzen sich an derselben Stelle fort
 
 #### Scenario: Einzelschritt und Neustart
-- **WHEN** im pausierten Zustand ein Einzelschritt ausgelöst wird
-- **THEN** wird genau ein Übergang vollständig animiert und anschließend der neue Schrittstand angezeigt
-- **AND** verhindert Neustart während des Übergangs alle späteren Ereignisse dieses alten Übergangs
+- **WHEN** in der Pause ein Einzelschritt ausgelöst wird
+- **THEN** steigt die Tickzahl genau um eins und die Wiedergabe bleibt danach pausiert; ein Neustart verwirft alle laufenden Aktionen und ihre späteren Ereignisse
 
 #### Scenario: Größenänderung im Vorstoß
-- **WHEN** während einer Bewegung die Fenstergröße geändert wird
-- **THEN** passen sich alle Spitzen an das neue Wabenraster an, ohne den Übergang neu zu beginnen
+- **WHEN** während eines Vorstoßes die Fenstergröße geändert wird
+- **THEN** passen sich Spitzen und Kontaktpunkte an die neue Projektion an, ohne Aktionen neu zu beginnen
 
 ### Requirement: Tempoauswahl im Simulationsfenster
-Die Oberfläche SHALL eine mit „Tempo“ beschriftete Auswahl für 0,25, 0,5, 1, 2, 4 und 8 Schritte pro Sekunde anbieten und den aktuellen Wert mit Einheit anzeigen. Der Startwert SHALL aus der Konfiguration stammen; ein abweichender gültiger Startwert SHALL zusätzlich auswählbar sein. Die Auswahl SHALL mit Tastatur und Zeigegeräten sowie in schmalen Fenstern bedienbar sein.
+Die mit „Tempo“ beschriftete Auswahl SHALL 0,25×, 0,5×, 1×, 2×, 4× und 8× anbieten. Bei 1× SHALL eine Realzeitsekunde einer Simulationssekunde mit 60 Ticks entsprechen. Ein abweichender konfigurierter Startfaktor SHALL zusätzlich angeboten werden. Auswahl und bestehende Bedienelemente SHALL per Tastatur, Zeigegerät und in schmalen Fenstern bedienbar bleiben.
 
 #### Scenario: Standardstart und Auswahl
-- **WHEN** die Anwendung mit der Standardkonfiguration geöffnet wird
-- **THEN** ist „2 Schritte/s“ ausgewählt und jede angebotene Geschwindigkeit kann ohne Neustart gewählt werden
+- **WHEN** die Anwendung mit Standardkonfiguration startet
+- **THEN** ist 2× ausgewählt und jede angebotene Geschwindigkeit ohne Neustart wählbar
 
 #### Scenario: Abweichender Konfigurationswert
-- **WHEN** ein gültiger Startwert außerhalb der angebotenen Standardwerte konfiguriert ist
-- **THEN** wird dieser als zusätzliche Option angezeigt und zunächst verwendet
+- **WHEN** ein gültiger abweichender Startfaktor konfiguriert ist
+- **THEN** wird dieser zusätzlich angeboten und zunächst verwendet
 
 #### Scenario: Tastatur und kleines Fenster
-- **WHEN** ein Benutzer die Auswahl per Tastatur oder auf einem schmalen Bildschirm bedient
-- **THEN** bleiben Beschriftung, aktueller Wert und alle bestehenden Wiedergabebedienelemente erkennbar und erreichbar
+- **WHEN** die Auswahl per Tastatur oder auf einem schmalen Bildschirm bedient wird
+- **THEN** bleiben Beschriftung, Zeitfaktor und Wiedergabebedienelemente erreichbar und erkennbar
 
 ### Requirement: Tempoänderung ohne Animationssprung
-Eine Tempoänderung SHALL ab dem Änderungszeitpunkt die weitere Wiedergabe beschleunigen oder verlangsamen und den bis dahin erreichten normierten Fortschritt erhalten. Sie SHALL weder einen Schritt neu berechnen noch eine zusätzliche Aktion auslösen. Bewegung, Teilung und Jagdkontakt SHALL gemeinsam skaliert werden. Regelzustand und Zufallsfolge je abgeschlossenem Schritt SHALL vom gewählten Tempo unabhängig bleiben.
+Ein Tempowechsel SHALL ausschließlich die weitere Simulationszeit beschleunigen oder verlangsamen. Tick- und Aktionsfortschritte SHALL erhalten bleiben. Bewohner, Wachstum und Verbrauch SHALL denselben Zeitfaktor verwenden. Nach gleicher Tickzahl SHALL derselbe Anfangszustand mit derselben Zufallsfolge unabhängig vom Wiedergabetempo denselben Zustand ergeben.
 
 #### Scenario: Beschleunigen mitten im Schritt
-- **WHEN** das Tempo während einer Bewegung oder Teilung erhöht wird
-- **THEN** bleibt die sichtbare Form am Änderungszeitpunkt erhalten und bewegt sich anschließend entsprechend schneller weiter
-- **AND** werden die verbleibenden Ereignisse genau einmal in ihrer bisherigen Reihenfolge ausgeführt
+- **WHEN** das Tempo während einer lokalen Bewegung oder Teilung erhöht wird
+- **THEN** bleiben die Formen am Änderungszeitpunkt erhalten und laufen danach schneller; keine Aktion wird neu ausgewürfelt
 
 #### Scenario: Verlangsamen vor dem Jagdkontakt
-- **WHEN** das Tempo während des Vorstoßes einer Karnivorenspitze verringert wird
-- **THEN** erreichen Karnivorenspitze und Grasfresser weiterhin gleichzeitig den vereinbarten Kontaktzeitpunkt
-- **AND** bleibt die Beute bis dahin sichtbar
+- **WHEN** das Tempo vor einem lokalen Jagdkontakt verringert wird
+- **THEN** bleiben Jäger und beanspruchte Beute aufeinander abgestimmt und die Beute bis zum Kontakt sowie während des Aussaugens sichtbar
 
 #### Scenario: Gleiches Regelresultat bei verschiedenen Tempos
-- **WHEN** dieselbe Anfangsbelegung und Zufallsfolge mit unterschiedlichen Tempos oder mehreren Tempoänderungen abgespielt werden
-- **THEN** sind Zustand, Gras, Energien und Populationen nach derselben Anzahl vollständiger Schritte identisch
+- **WHEN** derselbe Anfangszustand und Zufallsstrom bei verschiedenen Tempos verwendet werden
+- **THEN** sind nach gleicher Tickzahl Regelzustand, Reservierungen und Aktionsfortschritte identisch
 
 ### Requirement: Tempo und bestehende Wiedergabebedienung
-Die Tempoauswahl SHALL während Pause und Einzelschritt bedienbar bleiben. Eine Änderung in der Pause SHALL den Animationsfortschritt und Pausenmodus erhalten; Weiter SHALL das neue Tempo nutzen. Einzelschritt SHALL mit dem gewählten Tempo genau einen Schritt abspielen und danach pausieren. Neustart SHALL das gewählte Tempo erhalten; Neuladen SHALL den konfigurierten Startwert wiederherstellen.
+Die Tempoauswahl SHALL bei Pause und Einzeltick bedienbar bleiben. Änderung in der Pause SHALL keinen Tick auslösen. Weiter SHALL den neuen Faktor nutzen. Einzelschritt SHALL unabhängig vom Zeitfaktor genau einen Tick ausführen. Neustart SHALL die Auswahl erhalten und Neuladen SHALL den konfigurierten Startfaktor verwenden.
 
 #### Scenario: Änderung während einer Pause
-- **WHEN** ein pausierter Übergang eine neue Geschwindigkeit erhält
-- **THEN** bleiben Bild, abgeschlossene Schrittzahl und Fortschritt eingefroren, bis Weiter betätigt wird
-- **AND** gilt das neue Tempo für die Fortsetzung
+- **WHEN** in der Pause ein anderer Zeitfaktor gewählt wird
+- **THEN** bleiben Bild, Tickzahl und Aktionen unverändert, bis Weiter oder Einzelschritt betätigt wird
 
 #### Scenario: Einzelschritt mit Tempoänderung
-- **WHEN** während eines animierten Einzelschritts eine andere Geschwindigkeit gewählt wird
-- **THEN** wird derselbe Schritt mit dem neuen Tempo beendet und anschließend pausiert, ohne einen weiteren Schritt zu starten
+- **WHEN** vor einem Einzelschritt ein anderer Zeitfaktor gewählt wird
+- **THEN** wird dennoch genau ein Tick ausgeführt und danach pausiert
 
 #### Scenario: Neustart und Neuladen
-- **WHEN** ein Benutzer nach einer Tempowahl neu startet und später die Seite neu lädt
-- **THEN** erhält Neustart die Wahl und Neuladen setzt sie auf den konfigurierten Startwert zurück
+- **WHEN** nach einer Tempowahl neu gestartet und später neu geladen wird
+- **THEN** behält Neustart die Wahl und Neuladen verwendet den konfigurierten Startfaktor
 
 ### Requirement: Kontinuierliches Aussaugen der Beuteenergie
-Während des Aussaugens SHALL die sichtbare Beuteenergie kontinuierlich auf null sinken und ihre gesamte Form bis auf null ins Kontaktzentrum schrumpfen. Gleichzeitig SHALL die sichtbare Karnivorenenergie kontinuierlich vom Wert vor der Jagd zum regelgemäßen Jagdergebnis steigen. Beim Kontakt SHALL kein Energiegewinn vorweggenommen werden. Erst am Ende SHALL die Beute vollständig verschwinden. Effizienz und Energieobergrenze SHALL unverändert gelten.
+Beute SHALL während der Entnahme entsprechend ihrer Restenergie schrumpfen. Jägerenergie SHALL Transfer und laufenden Verbrauch abbilden. Aussaugdauer SHALL von tatsächlich übertragener Energie und konstanter Rate abhängen. Nur bei Energie null SHALL die Beute restlos verschwinden; überlebende Restbeute SHALL sichtbar bleiben. Es SHALL kein Gewinn vor Kontakt und kein Verwerfen überschüssiger Nahrung erfolgen.
 
 #### Scenario: Beginn und Zwischenzustand
-- **WHEN** die Spitze das Beutezentrum erreicht und anschließend ein Teil der Aussaugphase verstrichen ist
-- **THEN** zeigt der Kontaktzeitpunkt die vollständige angekommene Beute und die Karnivorenenergie vor der Jagd
-- **AND** ist im Zwischenzustand die Beute kleiner und energieärmer, während der Karnivor einen entsprechenden Teil seines regelgemäßen Energiegewinns zeigt
-- **AND** bleibt die führende Spitze währenddessen exakt im Kontaktzentrum
+- **WHEN** Kontakt erreicht ist und anschließend Energie übertragen wird
+- **THEN** bleibt die Beute zunächst sichtbar, während ihre Restenergie sinkt und die Jägerspitze am Kontakt hält
 
 #### Scenario: Vollständiges Aufzehren ohne Restlinien
-- **WHEN** das Aussaugen endet
-- **THEN** sind weder Füllung noch Striche oder andere Reste des Grasfressers sichtbar
-- **AND** ist der regelgemäße Jagdenergiegewinn vollständig dargestellt, bevor die Spitzen nachziehen
-- **AND** entsteht an der Phasengrenze kein Positions- oder Energiegewinnsprung
+- **WHEN** die Beuteenergie vollständig aufgebraucht wird
+- **THEN** verschwinden Füllung und Striche restlos und der Jäger zieht anschließend in die freie Beutezelle
 
 #### Scenario: Wirkungsgrad und Sättigung
-- **WHEN** nur ein Anteil der Beuteenergie nutzbar ist oder der Karnivor seine Energieobergrenze erreicht
-- **THEN** steigt seine dargestellte Energie kontinuierlich nur bis zum regelgemäßen Ergebnis
-- **AND** wird die Beute dennoch vollständig aufgezehrt und keine zusätzliche Energie oder Teilung ausgelöst
+- **WHEN** Wirkungsgrad oder freie Jägerkapazität die Aufnahme begrenzen
+- **THEN** wird nur nutzbare Nahrung entnommen; überlebende Restbeute bleibt sichtbar und der Jäger zieht zur Ausgangsform zurück
 
 ### Requirement: Aussaugen innerhalb der steuerbaren Schrittanimation
-Die Aussaugphase SHALL innerhalb desselben Simulationsschritts vor dem Nachziehen und einer etwaigen Karnivorenteilung abschließen. Pause, Fortsetzen, Tempowechsel und Größenänderung SHALL ihren Fortschritt erhalten; Neustart SHALL sie verwerfen. Übersprungene Bilder SHALL keine mehrfache Energieübertragung erzeugen. Der abgeschlossene Regelzustand und die Zufallsfolge SHALL unverändert bleiben.
+Aussaugen SHALL Teil einer lokalen Aktion ohne globale Rundengrenze sein. Erst danach SHALL Nachziehen, Rückziehen oder lokale Teilung folgen. Pause, Tempo- und Größenwechsel SHALL Fortschritte erhalten; Neustart SHALL sie verwerfen. Übersprungene Bilder SHALL keine zusätzliche Energie erzeugen oder Restnahrung vernichten.
 
 #### Scenario: Unterbrechen und Tempo ändern
-- **WHEN** während des Aussaugens pausiert, das Tempo geändert, fortgesetzt oder die Fenstergröße geändert wird
-- **THEN** bleiben Restenergie und Formfortschritt bei Pause unverändert und werden beim Fortsetzen ohne Sprung mit dem gewählten Tempo weitergeführt
-- **AND** bleibt der Spitzenkontakt bei Größenänderung erhalten
+- **WHEN** während einer Mahlzeit pausiert, Tempo geändert, fortgesetzt oder das Fenster vergrößert wird
+- **THEN** bleiben Fortschritte in der Pause erhalten und setzen sich ohne Sprung fort; der Spitzenkontakt bleibt deckungsgleich
 
 #### Scenario: Einzelschritt und Neustart
-- **WHEN** eine Jagd als Einzelschritt abgespielt oder während des Aussaugens neu gestartet wird
-- **THEN** umfasst der Einzelschritt Aussaugen, Nachziehen und mögliche Teilung vollständig und pausiert danach
-- **AND** entfernt ein Neustart sämtliche sichtbaren Reste und Übertragungen des alten Übergangs
+- **WHEN** während einer Mahlzeit ein Einzeltick ausgelöst oder neu gestartet wird
+- **THEN** führt Einzelschritt genau einen Tick weiter und hält verbleibende Aktionen pausiert; Neustart verwirft alte Mahlzeiten und Reservierungen
 
 #### Scenario: Ausgelassene Zwischenbilder und nachfolgende Teilung
-- **WHEN** die Wiedergabe das Ende der Aussaugphase oder den gesamten verbleibenden Schritt ohne Zwischenbilder überschreitet
-- **THEN** wird keine Beute doppelt entfernt und keine Energie doppelt übertragen
-- **AND** erfolgt eine regelgemäße Karnivorenteilung erst nach Aussaugen und Ankunft, mit exakt dem bisherigen Endzustand
+- **WHEN** ein Bild Aussaugende, Ankunft und folgende Teilung ohne Zwischenbilder überschreitet
+- **THEN** werden die lokalen Ereignisse in ihrer Reihenfolge genau einmal verarbeitet und unabhängige Aktionen nicht auf denselben Endzeitpunkt gestaucht
 
 ### Requirement: Grasaufnahme bei gehaltenem Spitzenkontakt
-Ein Grasfresser SHALL nach Spitzenkontakt im Graszentrum seine Kontaktpose halten, während das Grassymbol kontinuierlich auf null schrumpft und seine Energie zum regelgemäßen Aufnahmewert steigt. Erst nach vollständiger Aufnahme SHALL er den Schritt vollenden. Dies SHALL auch für hinausziehende Teilungshälften gelten. Wirkungsgrad, Sättigung, Verbrauch und abgeschlossene Regelzustände SHALL erhalten bleiben.
+Ein Grasfresser SHALL seine Kontaktpose während lokaler Grasaufnahme halten. Grassymbol und Bewohnerenergie SHALL tatsächliche Entnahme, Wachstum und Verbrauch abbilden. Aussaugdauer SHALL von übertragener Energie abhängen. Erst danach SHALL er nachziehen. Überschüssiges und nachwachsendes Gras SHALL erhalten bleiben. Dies SHALL auch für hinausziehende Teilungshälften gelten.
 
 #### Scenario: Gras vor dem Nachziehen aufnehmen
-- **WHEN** die erste Spitze das Zentrum einer grasbewachsenen Zielzelle erreicht
-- **THEN** sind Gras und Ausgangsenergie zunächst vollständig sichtbar
-- **AND** schrumpft das Gras während des gehaltenen Kontakts und die Bewohnerenergie steigt kontinuierlich
-- **AND** bewegen sich die Spitzen erst nach vollständig verschwundenem Gras zu ihren Endpositionen
+- **WHEN** eine Spitze das Zentrum einer grasbewachsenen Zielzelle erreicht
+- **THEN** beginnt lokale Aufnahme, während der Körper hält; erst danach wird nachgezogen und nicht aufgenommenes Gras bleibt sichtbar
 
 #### Scenario: Teilungshälften und stationäre Grasfresser
-- **WHEN** eine Hälfte in eine grasbewachsene Nachbarzelle schreitet oder ein Grasfresser in seiner Zelle Gras aufnimmt
-- **THEN** wird das Gras am jeweiligen Zellzentrum kontinuierlich aufgenommen
-- **AND** wird eine stehenbleibende Teilungshälfte nicht erneut gefüttert und kein zusätzlicher aktiver Zug ausgelöst
-- **AND** ist die Aufnahme einer gejagten Hälfte vor dem Karnivorenkontakt abgeschlossen
+- **WHEN** eine Hälfte hinausschreitet oder ein stationärer Grasfresser lokal frisst
+- **THEN** erfolgt die Aufnahme am tatsächlichen Zellzentrum; verbleibende Hälften erhalten keine erfundene zweite Teilungsmahlzeit und Jagden werden auf lokale Ankunft abgestimmt
 
 #### Scenario: Pausierte und beschleunigte Aufnahme
-- **WHEN** während der Grasaufnahme pausiert, das Tempo geändert oder das Fenster vergrößert wird
-- **THEN** bleiben Restgras, Energie und Spitzenfortschritt bei Pause eingefroren und setzen sich ohne Sprung fort
-- **AND** bleiben Graszentrum und Kontaktspitze deckungsgleich und ausgelassene Bilder erzeugen keine doppelte Aufnahme
+- **WHEN** während einer Aufnahme pausiert, Tempo geändert oder das Fenster vergrößert wird
+- **THEN** bleiben Tick-, Energie- und Formfortschritt bei Pause unverändert und setzen sich ohne Sprung fort; Spitze und Graszentrum bleiben deckungsgleich
+
+### Requirement: Sichtbare unabhängige Simulationszeit
+Die Oberfläche SHALL aktuelle Tickzahl, daraus berechnete Simulationszeit und Populationen anzeigen. Gras SHALL in kleinen zeitlich gleichmäßigen Änderungen wachsen. Unbeteiligte Bewohner SHALL während langer Mahlzeiten und Teilungen weiter sichtbar handeln. Bei Start und nach Teilungen SHALL keine gemeinsame Aktionswelle erzwungen werden.
+
+#### Scenario: Unterschiedlich lange Mahlzeiten
+- **WHEN** zwei unabhängige Tiere zu verschiedenen Zeiten oder mit unterschiedlichen Energiemengen Nahrung aufnehmen
+- **THEN** sind unterschiedliche Aktionsphasen gleichzeitig sichtbar
+- **AND** kann das Tier mit der kürzeren Mahlzeit bereits weiterziehen, während das andere noch saugt
+
+#### Scenario: Feines Graswachstum
+- **WHEN** eine unberührte Zelle während 60 Ticks beobachtet wird
+- **THEN** erhält sie 60 kleine Wachstumsbeiträge bis zum Maximum anstelle eines großen Rundensprungs
