@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import { checkSpeed } from './check-speed.mjs';
 
 // Usage: node scripts/browser-check.mjs <playwright/index.mjs> [chromium.exe] [base URL]
 const { chromium } = await import(pathToFileURL(process.argv[2]).href);
@@ -49,6 +50,8 @@ try {
   assert.match(await status(), /^Schritt 0 /);
   assert.equal(await page.getByRole('button', { name: 'Einzelschritt', exact: true }).isEnabled(), true);
   await page.setViewportSize({ width: 1440, height: 1000 });
+
+  await checkSpeed(page, browser, errors);
 
   // Reproducible rendered intermediate poses, using real geometry and transition data.
   const contactChecks = await page.evaluate(async () => {

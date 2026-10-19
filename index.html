@@ -4,7 +4,10 @@
   <body>
     <main>
       <header><div><p class="eyebrow">Ein kleines Ökosystem</p><h1>Leben in den Waben</h1></div>
-        <div class="controls"><button id="toggle" type="button">Pause</button><button id="step" type="button">Einzelschritt</button><button id="reset" type="button">Neustart</button></div>
+        <div class="controls">
+          <button id="toggle" type="button">Pause</button><button id="step" type="button">Einzelschritt</button><button id="reset" type="button">Neustart</button>
+          <div class="speed-control"><label for="speed">Tempo</label><select id="speed"></select></div>
+        </div>
       </header>
       <p id="status" aria-live="polite"></p>
       <section class="field-container" aria-label="Simulationsfeld"><canvas id="field" aria-label="Wabenfeld mit Gras, Grasfressern und Karnivoren"></canvas></section>

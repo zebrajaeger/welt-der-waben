@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Playback } from '../src/playback';
-import { step, transition } from '../src/simulation';
+import { initialize, step, transition } from '../src/simulation';
+import { defaultConfig } from '../src/config';
 import { movingPrey, resident, seededRandom, testConfig, testState } from './fixtures';
 
 describe('animation playback', () => {
@@ -93,5 +94,129 @@ describe('animation playback', () => {
     playback.tick(60016);
     expect(playback.progress).toBeCloseTo(16 / 500);
     expect(compute).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('runtime speed', () => {
+  it('settles time at the old speed and changes only future progress', () => {
+    const config = Object.freeze({ ...testConfig });
+    const compute = vi.fn(state => transition(state, config, () => 0));
+    const playback = new Playback(movingPrey(), config, undefined, compute);
+    const reference = new Playback(movingPrey(), config, () => 0);
+    playback.tick(0); playback.tick(50);
+    reference.tick(0); reference.tick(100);
+    playback.setStepsPerSecond(4, 100);
+    expect(playback.progress).toBeCloseTo(0.2);
+    expect(playback.frame).toEqual(reference.frame);
+    playback.tick(150);
+    expect(playback.progress).toBeCloseTo(0.4);
+    playback.setStepsPerSecond(0.5, 200);
+    expect(playback.progress).toBeCloseTo(0.6);
+    playback.tick(1000);
+    expect(playback.state.step).toBe(1);
+    expect(playback.stepsPerSecond).toBe(0.5);
+    expect(config.stepsPerSecond).toBe(2);
+    expect(compute).toHaveBeenCalledTimes(1);
+  });
+  it('does not prepare a step merely because the speed is selected', () => {
+    const compute = vi.fn(state => transition(state, testConfig, () => 0));
+    const playback = new Playback(movingPrey(), testConfig, undefined, compute);
+    playback.setStepsPerSecond(8, 0);
+    playback.setStepsPerSecond(0.25, 100);
+    expect(playback.active).toBe(false);
+    expect(playback.state.step).toBe(0);
+    expect(compute).not.toHaveBeenCalled();
+    playback.tick(100);
+    expect(playback.progress).toBe(0);
+    expect(compute).toHaveBeenCalledTimes(1);
+  });
+  it('rejects invalid speeds before settling time or changing any state', () => {
+    const playback = new Playback(movingPrey(), testConfig, () => 0);
+    playback.tick(0); playback.tick(100);
+    const before = playback.frame;
+    for (const value of [0, -1, NaN, Infinity, -Infinity]) {
+      expect(() => playback.setStepsPerSecond(value, 10000)).toThrow(/Tempo/);
+      expect(playback.frame).toEqual(before);
+      expect(playback.progress).toBeCloseTo(0.2);
+      expect(playback.stepsPerSecond).toBe(2);
+    }
+    playback.tick(200);
+    expect(playback.progress).toBeCloseTo(0.4);
+  });
+  it('closes a due transition at a speed-change boundary without starting another', () => {
+    const compute = vi.fn(state => transition(state, testConfig, () => 0));
+    const playback = new Playback(movingPrey(), testConfig, undefined, compute);
+    playback.tick(0);
+    playback.setStepsPerSecond(8, 500);
+    expect(playback.state.step).toBe(1);
+    expect(playback.active).toBe(false);
+    expect(compute).toHaveBeenCalledTimes(1);
+    playback.tick(500);
+    expect(playback.progress).toBe(0);
+    expect(compute).toHaveBeenCalledTimes(2);
+    playback.tick(60000);
+    expect(playback.state.step).toBe(2);
+    expect(playback.active).toBe(false);
+    expect(compute).toHaveBeenCalledTimes(2);
+  });
+  it('preserves a paused division when changing speed and resumes at the new rate', () => {
+    const playback = new Playback(testState([resident(1, 0, 0, 19)], 10), testConfig, () => 0);
+    playback.tick(0); playback.tick(200); playback.toggle(200);
+    const paused = playback.frame;
+    playback.setStepsPerSecond(8, 10000);
+    expect(playback.running).toBe(false);
+    expect(playback.frame).toEqual(paused);
+    playback.toggle(11000);
+    expect(playback.frame).toEqual(paused);
+    playback.tick(11012.5);
+    expect(playback.progress).toBeCloseTo(0.5);
+    playback.tick(11075);
+    expect(playback.state.step).toBe(1);
+  });
+  it('keeps single-step mode through multiple speed changes and pauses once at completion', () => {
+    const compute = vi.fn(state => transition(state, testConfig, () => 0));
+    const playback = new Playback(movingPrey(), testConfig, undefined, compute);
+    playback.toggle(0); playback.reset(movingPrey(), 0); compute.mockClear();
+    playback.singleStep(0);
+    playback.setStepsPerSecond(0.25, 100);
+    expect(playback.progress).toBeCloseTo(0.2);
+    playback.tick(1100);
+    expect(playback.progress).toBeCloseTo(0.45);
+    playback.setStepsPerSecond(8, 1100);
+    playback.tick(1168.75);
+    expect(playback.running).toBe(false);
+    expect(playback.canSingleStep).toBe(true);
+    expect(playback.state.step).toBe(1);
+    playback.tick(10000);
+    expect(compute).toHaveBeenCalledTimes(1);
+  });
+  it('retains the chosen speed on reset and uses the configured speed for a new instance', () => {
+    const playback = new Playback(movingPrey(), testConfig, () => 0);
+    playback.setStepsPerSecond(4, 0);
+    playback.reset(movingPrey(), 100);
+    expect(playback.stepsPerSecond).toBe(4);
+    playback.tick(100); playback.tick(350);
+    expect(playback.state.step).toBe(1);
+    expect(new Playback(movingPrey(), testConfig).stepsPerSecond).toBe(2);
+  });
+  it('produces the same seeded rule states after each step despite repeated speed changes', () => {
+    const initial = initialize(defaultConfig, seededRandom(4));
+    const random = seededRandom(9), referenceRandom = seededRandom(9);
+    const playback = new Playback(initial, defaultConfig, random);
+    let expected = initial, now = 0;
+    for (let i = 0; i < 50; i++) {
+      const first = i % 2 ? 8 : 0.25, second = i % 2 ? 0.5 : 4;
+      playback.setStepsPerSecond(first, now);
+      playback.tick(now);
+      now += 0.2 * 1000 / first;
+      playback.tick(now);
+      const before = playback.frame;
+      playback.setStepsPerSecond(second, now);
+      expect(playback.frame).toEqual(before);
+      now += 0.8 * 1000 / second;
+      playback.tick(now);
+      expected = step(expected, defaultConfig, referenceRandom);
+      expect(playback.state).toEqual(expected);
+    }
   });
 });

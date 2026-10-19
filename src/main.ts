@@ -10,11 +10,17 @@ const context = canvas.getContext('2d');
 const toggle = document.querySelector<HTMLButtonElement>('#toggle')!;
 const singleStep = document.querySelector<HTMLButtonElement>('#step')!;
 const reset = document.querySelector<HTMLButtonElement>('#reset')!;
+const speed = document.querySelector<HTMLSelectElement>('#speed')!;
 
 try {
   validateConfig(defaultConfig);
   if (!context) throw new Error('Dieser Browser unterstützt Canvas 2D nicht.');
   const playback = new Playback(initialize(defaultConfig), defaultConfig);
+  const speedFormat = new Intl.NumberFormat('de-DE', { maximumSignificantDigits: 15 });
+  for (const value of [...new Set([0.25, 0.5, 1, 2, 4, 8, playback.stepsPerSecond])].sort((a, b) => a - b)) {
+    speed.add(new Option(`${speedFormat.format(value)} ${value === 1 ? 'Schritt' : 'Schritte'}/s`, String(value)));
+  }
+  speed.value = String(playback.stepsPerSecond);
   const listeners = new AbortController();
   let frameRequest: number | undefined;
 
@@ -50,6 +56,10 @@ try {
   toggle.addEventListener('click', () => { playback.toggle(performance.now()); draw(); schedule(); }, { signal: listeners.signal });
   singleStep.addEventListener('click', () => { playback.singleStep(performance.now()); draw(); schedule(); }, { signal: listeners.signal });
   reset.addEventListener('click', () => { playback.reset(initialize(defaultConfig), performance.now()); draw(); schedule(); }, { signal: listeners.signal });
+  speed.addEventListener('change', () => {
+    playback.setStepsPerSecond(Number(speed.value), performance.now());
+    draw(); schedule();
+  }, { signal: listeners.signal });
   const observer = new ResizeObserver(draw);
   observer.observe(canvas.parentElement!);
   window.addEventListener('resize', draw, { signal: listeners.signal });
@@ -65,5 +75,5 @@ try {
 } catch (error) {
   status.textContent = error instanceof Error ? error.message : String(error);
   status.setAttribute('role', 'alert');
-  toggle.disabled = singleStep.disabled = reset.disabled = true;
+  toggle.disabled = singleStep.disabled = reset.disabled = speed.disabled = true;
 }

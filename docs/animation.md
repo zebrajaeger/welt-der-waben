@@ -30,6 +30,8 @@ Für teilende Tiere wird die normale Bewegung verkürzt: Grasfresser kommen bei 
 
 `Playback.tick(timestamp)` benötigt monotone Zeitstempel in Millisekunden. Pause und Fortsetzen rechnen nur aktive Zeit an. Pro Takt entsteht genau ein Plan; ein verspätetes Bild schließt höchstens einen Takt ab und erzeugt keine Nachholwarteschlange. `frame` und `progress` sind lesend abfragbar. Die Browseranbindung verwaltet einen Frame-Callback, entsorgt ihn bei HMR und entfernt ihre Event-Listener.
 
+`Playback.stepsPerSecond` zeigt das aktuelle Laufzeittempo. `setStepsPerSecond(value, timestamp)` akzeptiert positive endliche Werte: Bis zum Änderungszeitpunkt wird aktive Zeit mit dem bisherigen Tempo abgerechnet, anschließend nur neue Zeit mit dem neuen Tempo. Der normierte Fortschritt wird akkumuliert und springt beim Setzen nicht. Die Methode startet keinen neuen Übergang und verändert weder Regelkonfiguration noch Zufallsfolge. Ungültige Werte werden vor jeder Zeitabrechnung abgewiesen. Pause und Einzelschritt behalten ihren Modus; `reset` behält das gewählte Tempo. Eine neu konstruierte Steuerung beginnt wieder mit dem Konfigurationswert.
+
 ## Prüfung im Browser
 
 Bei laufendem Vite-Server kann eine vorhandene Playwright-Installation verwendet werden:
