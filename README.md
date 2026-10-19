@@ -6,6 +6,8 @@ A small ecosystem on a hexagonal grid: grass grows, herbivores feed and divide, 
 
 Built with TypeScript, Canvas 2D and Vite. The application interface is currently in German.
 
+**Planned online version:** [Open Welt der Waben](https://zebrajaeger.github.io/welt-der-waben/). GitHub Pages deployment is prepared; the first live deployment has not yet been verified. See the [deployment guide](docs/deployment.md) for activation and verification.
+
 [Overview](#overview) · [Screenshots](#screenshots) · [Quick start](#quick-start) · [Controls](#controls) · [Simulation rules](#simulation-rules) · [Settings and units](#settings-and-units) · [Development](#development)
 
 ## Overview
@@ -121,9 +123,12 @@ Invalid or blocked storage produces a notice; editing and applying settings rema
 | `npm run dev` | Start Vite with automatic browser updates when source files change. |
 | `npm test` | Check simulation rules, geometry, settings and playback, including long runs. |
 | `npm run build` | Check TypeScript and create a production bundle in `dist/`. |
+| `npm run preview` | Preview the built site locally under `/welt-der-waben/`. |
+| `npm run test:production` | Test the existing production build in Chromium; see the setup below. |
 
 Further reading:
 
 - [Animation, tick order and browser checks](docs/animation.md) — technical notes in German.
 - [Updating the README screenshots](docs/screenshots.md).
+- [GitHub Pages setup and production browser checks](docs/deployment.md).
 - [Local slow-motion examples](scripts/grass-division-demo.html) — with Vite running, open `/scripts/grass-division-demo.html` under its local address. These examples illustrate short and long meals, division and surviving prey.

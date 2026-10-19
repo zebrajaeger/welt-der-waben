@@ -6,6 +6,8 @@ Ein kleines Ökosystem auf einem Sechseckraster: Gras wächst, Grasfresser fress
 
 Entwickelt mit TypeScript, Canvas 2D und Vite. Die Benutzeroberfläche ist derzeit deutsch.
 
+**Geplante Onlineversion:** [Welt der Waben öffnen](https://zebrajaeger.github.io/welt-der-waben/). Die Veröffentlichung über GitHub Pages ist vorbereitet; das erste Live-Deployment wurde noch nicht verifiziert. Die [Deployment-Anleitung](docs/deployment.md) beschreibt Aktivierung und Prüfung.
+
 [Überblick](#überblick) · [Screenshots](#screenshots) · [Schnellstart](#schnellstart) · [Bedienung](#bedienung) · [Simulationsregeln](#simulationsregeln) · [Einstellungen und Einheiten](#einstellungen-und-einheiten) · [Entwicklung](#entwicklung)
 
 ## Überblick
@@ -121,9 +123,12 @@ Ungültiger oder blockierter Speicher erzeugt einen Hinweis; Bearbeiten und Übe
 | `npm run dev` | Vite starten; Quelltextänderungen werden automatisch im Browser aktualisiert. |
 | `npm test` | Regeln, Geometrie, Einstellungen und Wiedergabe einschließlich Langzeitläufen prüfen. |
 | `npm run build` | TypeScript prüfen und die Produktionsdateien in `dist/` erzeugen. |
+| `npm run preview` | Den gebauten Stand lokal unter `/welt-der-waben/` ansehen. |
+| `npm run test:production` | Den vorhandenen Produktionsbuild mit Chromium prüfen; Einrichtung siehe unten. |
 
 Weiterführende Dokumentation:
 
 - [Animation, Tickreihenfolge und Browserprüfung](docs/animation.md) — technische Hinweise auf Deutsch.
 - [README-Screenshots erneuern](docs/screenshots.md) — Anleitung auf Englisch.
+- [GitHub-Pages-Einrichtung und Produktions-Browserprüfung](docs/deployment.md) — Anleitung auf Englisch.
 - [Lokale Zeitlupenbeispiele](scripts/grass-division-demo.html) — bei laufendem Vite unter dessen lokaler Adresse `/scripts/grass-division-demo.html` öffnen. Die Beispiele zeigen kurze und lange Mahlzeiten, Teilung und überlebende Beute.
