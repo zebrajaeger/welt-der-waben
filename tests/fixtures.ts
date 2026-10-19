@@ -1,9 +1,9 @@
 ﻿import { defaultConfig, type Config } from '../src/config';
 import type { Animal, State } from '../src/simulation';
 
-export const testConfig: Config = { ...defaultConfig, width: 5, height: 4,
+export const testConfig: Config = { ...defaultConfig, width: 5, height: 4, grassMax: 10, grassGrowthPerSecond: 1,
   herbivore: { ...defaultConfig.herbivore, initialCount: 0 },
-  carnivore: { ...defaultConfig.carnivore, initialCount: 0 } };
+  carnivore: { ...defaultConfig.carnivore, initialCount: 0, energyDrainPerSecond: 2 } };
 export const resident = (id: number, column: number, row: number, energy = 5, species: Animal['species'] = 'herbivore'): Animal =>
   ({ id, column, row, energy, species, angle: -Math.PI / 2, readyAt: 0 });
 export const testState = (animals: Animal[], grass = 0, config = testConfig): State =>

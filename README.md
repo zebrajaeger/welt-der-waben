@@ -88,6 +88,8 @@ Form edits are a **draft** until explicitly applied. The panel reports whether t
 | **Übernehmen & neu starten** | Validate the draft and start a new world at tick zero. A paused simulation stays paused. Does not save the draft. |
 | **Im Browser speichern** | Save the valid draft for later visits. Does not change or restart the current world. |
 | **Standardwerte** | Restore the current program defaults in the form. Then apply them to start a run, or save them for later visits. |
+| **Als JSON exportieren** | Download the complete valid form draft as a JSON file, without applying or saving it. |
+| **JSON importieren** | Choose a local JSON settings file and load it into the form. Apply it to start a new run, or save it for later visits. |
 
 The top **Tempo** selector works immediately and also updates the draft's speed field, preserving other edits. Changing **Starttempo (×)** inside the form takes effect only when applied. Neither action saves automatically. **Neustart** uses active values and preserves unapplied form edits.
 
@@ -98,10 +100,11 @@ Defaults live in [src/config.ts](src/config.ts). All rates use **simulation time
 | Group | Parameters and defaults |
 | --- | --- |
 | Field | `width` × `height`: 30 × 20 cells, with fixed boundaries. |
-| Grass | `grassMax`: 10; `grassGrowthPerSecond`: 1 per cell; `grassEfficiency`: 1. |
+| Grass | `grassMax`: 5; `grassGrowthPerSecond`: 0.25 per cell; `grassEfficiency`: 1. |
 | Predation | `preyEfficiency`: 0.5; `energyTransferPerSecond`: 8 gross energy per second. |
 | Playback | `speedMultiplier`: 2; changes real-time playback, not the rates per simulation second. |
-| Each species | `initialCount`: 10; `initialEnergy`: 10; `maxEnergy`: 20; `energyDrainPerSecond`: 2; `divisionFraction`: 0.75. |
+| Each species | `initialCount`: 10; `initialEnergy`: 10; `maxEnergy`: 20; `divisionFraction`: 0.75. |
+| Energy consumption | `energyDrainPerSecond`: 2 for herbivores, 0.33 for carnivores. |
 | Action durations | `approachTicks`: 12; `followTicks`: 6 per tip; `waitTicks`: 12; `swellTicks`: 6; `divisionApproachTicks`: 8; `divisionFollowTicks`: 4 per tip. |
 
 Start energy is set independently for each species. It must be greater than zero and no larger than that species' maximum. Changing the maximum does not automatically change start energy. Grass starts at half its maximum, except under initial herbivores, where it starts at zero.
@@ -115,6 +118,52 @@ Invalid configurations are rejected with an explanation. Initial populations mus
 Only settings are saved in `localStorage`, not animals or tick counts. Storage belongs to the current browser and address, including protocol and port. Clearing browser data removes it. Reloading starts a fresh world with saved settings, or the program defaults if no valid settings can be loaded.
 
 Invalid or blocked storage produces a notice; editing and applying settings remain usable. Older saved configurations without start energy retain their values and use the former half-maximum start energy for each species.
+
+### JSON settings files
+
+Use **Als JSON exportieren** in the settings panel to download `welt-der-waben-settings.json`. The file contains the form draft, including start energy and start speed, even if you have not applied or saved it yet. Invalid drafts produce an explanation instead of a download. Files contain settings only; they do not restore animals, grass, tick counts or the same random world.
+
+To transfer settings, open **JSON importieren** and select the downloaded file in another browser, on another device, or at another address. Import replaces the entire form draft after validation. It keeps the current world, pause state, active speed and saved settings. Choose **Übernehmen & neu starten** to activate it, and **Im Browser speichern** to keep it after reloading. These are separate actions.
+
+Cancelling or importing an unreadable, invalid or incompatible file leaves existing values intact and reports errors where needed. File operations stay on your device and work even when browser storage is blocked. Version 1 files are migrated using half of each species' maximum as its start energy. Version 2 requires all parameters; unsupported versions are rejected. Unknown extra fields are ignored and omitted from subsequent exports.
+
+This complete example uses the current defaults. Keep the version and all parameter names; JSON numbers use a decimal point:
+
+```json
+{
+  "version": 2,
+  "config": {
+    "width": 30,
+    "height": 20,
+    "grassMax": 5,
+    "grassGrowthPerSecond": 0.25,
+    "grassEfficiency": 1,
+    "preyEfficiency": 0.5,
+    "energyTransferPerSecond": 8,
+    "speedMultiplier": 2,
+    "approachTicks": 12,
+    "followTicks": 6,
+    "waitTicks": 12,
+    "swellTicks": 6,
+    "divisionApproachTicks": 8,
+    "divisionFollowTicks": 4,
+    "herbivore": {
+      "initialCount": 10,
+      "initialEnergy": 10,
+      "maxEnergy": 20,
+      "energyDrainPerSecond": 2,
+      "divisionFraction": 0.75
+    },
+    "carnivore": {
+      "initialCount": 10,
+      "initialEnergy": 10,
+      "maxEnergy": 20,
+      "energyDrainPerSecond": 0.33,
+      "divisionFraction": 0.75
+    }
+  }
+}
+```
 
 ## Development
 

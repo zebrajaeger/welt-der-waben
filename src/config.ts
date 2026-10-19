@@ -26,12 +26,12 @@ export interface Config {
   carnivore: SpeciesConfig;
 }
 export const defaultConfig: Config = {
-  width: 30, height: 20, grassMax: 10, grassGrowthPerSecond: 1,
+  width: 30, height: 20, grassMax: 5, grassGrowthPerSecond: 0.25,
   grassEfficiency: 1, preyEfficiency: 0.5, energyTransferPerSecond: 8,
   speedMultiplier: 2, approachTicks: 12, followTicks: 6, waitTicks: 12,
   swellTicks: 6, divisionApproachTicks: 8, divisionFollowTicks: 4,
   herbivore: { initialCount: 10, initialEnergy: 10, maxEnergy: 20, energyDrainPerSecond: 2, divisionFraction: 0.75 },
-  carnivore: { initialCount: 10, initialEnergy: 10, maxEnergy: 20, energyDrainPerSecond: 2, divisionFraction: 0.75 },
+  carnivore: { initialCount: 10, initialEnergy: 10, maxEnergy: 20, energyDrainPerSecond: 0.33, divisionFraction: 0.75 },
 };
 export function validateConfig(config: Config): void {
   const number = (value: number, name: string, min: number, strict = false) => {

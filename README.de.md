@@ -88,6 +88,8 @@ Formularänderungen sind zunächst ein **Entwurf**, bis sie ausdrücklich übern
 | **Übernehmen & neu starten** | Den Entwurf validieren und eine neue Welt bei Tick null beginnen. Eine pausierte Simulation bleibt pausiert. Speichert den Entwurf nicht. |
 | **Im Browser speichern** | Den gültigen Entwurf für spätere Besuche speichern. Verändert den aktuellen Lauf nicht und startet ihn nicht neu. |
 | **Standardwerte** | Die aktuellen Programmstandards ins Formular laden. Anschließend übernehmen, um damit zu starten, oder für spätere Besuche speichern. |
+| **Als JSON exportieren** | Den vollständigen gültigen Formularentwurf als JSON-Datei herunterladen, ohne ihn zu übernehmen oder zu speichern. |
+| **JSON importieren** | Eine lokale JSON-Einstellungsdatei auswählen und ins Formular laden. Anschließend für einen neuen Lauf übernehmen oder für spätere Besuche speichern. |
 
 Die obere **Tempo**-Auswahl wirkt sofort und aktualisiert auch das Tempofeld im Entwurf; andere Änderungen bleiben erhalten. **Starttempo (×)** im Formular wird erst durch Übernehmen wirksam. Keine der beiden Aktionen speichert automatisch. **Neustart** verwendet aktive Werte und lässt offene Entwurfsänderungen bestehen.
 
@@ -98,10 +100,11 @@ Die Standardwerte stehen in [src/config.ts](src/config.ts). Alle Raten beziehen 
 | Gruppe | Parameter und Standardwerte |
 | --- | --- |
 | Feld | `width` × `height`: 30 × 20 Zellen mit festen Grenzen. |
-| Gras | `grassMax`: 10; `grassGrowthPerSecond`: 1 je Zelle; `grassEfficiency`: 1. |
+| Gras | `grassMax`: 5; `grassGrowthPerSecond`: 0,25 je Zelle; `grassEfficiency`: 1. |
 | Jagd | `preyEfficiency`: 0,5; `energyTransferPerSecond`: 8 Bruttoenergie pro Sekunde. |
 | Wiedergabe | `speedMultiplier`: 2; verändert die Realzeitwiedergabe, nicht die Raten pro Simulationssekunde. |
-| Je Art | `initialCount`: 10; `initialEnergy`: 10; `maxEnergy`: 20; `energyDrainPerSecond`: 2; `divisionFraction`: 0,75. |
+| Je Art | `initialCount`: 10; `initialEnergy`: 10; `maxEnergy`: 20; `divisionFraction`: 0,75. |
+| Energieverbrauch | `energyDrainPerSecond`: 2 für Grasfresser, 0,33 für Karnivoren. |
 | Aktionszeiten | `approachTicks`: 12; `followTicks`: 6 je Spitze; `waitTicks`: 12; `swellTicks`: 6; `divisionApproachTicks`: 8; `divisionFollowTicks`: 4 je Spitze. |
 
 Die Startenergie ist je Art unabhängig einstellbar. Sie muss größer als null und höchstens so groß wie die jeweilige Maximalenergie sein. Eine Änderung des Maximums ändert die Startenergie nicht automatisch. Gras startet mit der Hälfte seines Maximums, außer unter initialen Grasfressern: Dort startet es bei null.
@@ -115,6 +118,52 @@ Ungültige Konfigurationen werden mit einer Erklärung abgewiesen. Startpopulati
 In `localStorage` werden nur Einstellungen gespeichert, keine Tiere oder Tickstände. Die Speicherung gilt für diesen Browser und dieselbe Adresse einschließlich Protokoll und Port. Das Löschen der Browserdaten entfernt sie. Neuladen beginnt eine neue Welt mit gespeicherten Einstellungen oder den Programmstandards, falls keine gültigen Werte geladen werden können.
 
 Ungültiger oder blockierter Speicher erzeugt einen Hinweis; Bearbeiten und Übernehmen bleiben nutzbar. Ältere Speicherungen ohne Startenergie behalten ihre Werte und verwenden die bisherige halbe Maximalenergie je Art als Startenergie.
+
+### JSON-Einstellungsdateien
+
+Mit **Als JSON exportieren** in der Einstellungsbox wird `welt-der-waben-settings.json` heruntergeladen. Die Datei enthält den Formularentwurf einschließlich Startenergien und Starttempo, auch wenn er noch nicht übernommen oder gespeichert wurde. Ungültige Entwürfe erzeugen einen Hinweis statt eines Downloads. Dateien enthalten ausschließlich Einstellungen; Tiere, Grasbestände, Tickstände und dieselbe zufällige Welt lassen sich damit nicht wiederherstellen.
+
+Zum Übertragen **JSON importieren** öffnen und die heruntergeladene Datei in einem anderen Browser, auf einem anderen Gerät oder unter einer anderen Adresse auswählen. Nach erfolgreicher Prüfung ersetzt der Import den gesamten Formularentwurf. Laufende Welt, Pausenmodus, aktives Tempo und gespeicherte Einstellungen bleiben erhalten. **Übernehmen & neu starten** aktiviert die Werte; **Im Browser speichern** bewahrt sie nach dem Neuladen. Beides sind separate Aktionen.
+
+Abbrechen sowie unlesbare, ungültige oder inkompatible Dateien lassen bestehende Werte unverändert und melden nötigenfalls die Ursache. Die Dateiverarbeitung bleibt auf dem Gerät und funktioniert auch bei blockiertem Browserspeicher. Dateien der Version 1 verwenden nach der Migration die halbe Maximalenergie je Art als Startenergie. Version 2 verlangt alle Parameter; unbekannte Versionen werden abgewiesen. Unbekannte Zusatzfelder werden ignoriert und beim nächsten Export weggelassen.
+
+Dieses vollständige Beispiel enthält die aktuellen Standardwerte. Version und alle Parameternamen beibehalten; JSON-Zahlen verwenden einen Dezimalpunkt:
+
+```json
+{
+  "version": 2,
+  "config": {
+    "width": 30,
+    "height": 20,
+    "grassMax": 5,
+    "grassGrowthPerSecond": 0.25,
+    "grassEfficiency": 1,
+    "preyEfficiency": 0.5,
+    "energyTransferPerSecond": 8,
+    "speedMultiplier": 2,
+    "approachTicks": 12,
+    "followTicks": 6,
+    "waitTicks": 12,
+    "swellTicks": 6,
+    "divisionApproachTicks": 8,
+    "divisionFollowTicks": 4,
+    "herbivore": {
+      "initialCount": 10,
+      "initialEnergy": 10,
+      "maxEnergy": 20,
+      "energyDrainPerSecond": 2,
+      "divisionFraction": 0.75
+    },
+    "carnivore": {
+      "initialCount": 10,
+      "initialEnergy": 10,
+      "maxEnergy": 20,
+      "energyDrainPerSecond": 0.33,
+      "divisionFraction": 0.75
+    }
+  }
+}
+```
 
 ## Entwicklung
 

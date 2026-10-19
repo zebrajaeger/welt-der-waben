@@ -18,8 +18,12 @@
             <button type="submit">Übernehmen &amp; neu starten</button>
             <button id="settings-save" type="button">Im Browser speichern</button>
             <button id="settings-defaults" type="button">Standardwerte</button>
+            <button id="settings-export" type="button">Als JSON exportieren</button>
+            <button id="settings-import" type="button" aria-controls="settings-file" aria-describedby="settings-file-help">JSON importieren</button>
+            <input id="settings-file" type="file" accept=".json,application/json" aria-label="JSON-Einstellungsdatei" hidden />
           </div>
           <p class="settings-hint">Speichern bewahrt den Formularentwurf für spätere Besuche dieser Browseradresse. Standardwerte setzt das Formular zurück; anschließend übernehmen oder speichern.</p>
+          <p id="settings-file-help" class="settings-hint">JSON-Dateien übertragen nur Einstellungen. Export lädt den gültigen Formularentwurf herunter. Import ersetzt nur das Formular; anschließend übernehmen oder im Browser speichern. Die Datei bleibt auf diesem Gerät.</p>
           <p id="settings-state" role="status"></p>
           <p id="settings-message" role="status" tabindex="-1"></p>
         </form>

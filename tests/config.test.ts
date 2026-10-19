@@ -6,7 +6,10 @@ describe('configuration', () => {
     expect(ticksPerSecond).toBe(60);
     expect(defaultConfig.energyTransferPerSecond).toBe(8);
     expect([defaultConfig.width, defaultConfig.height]).toEqual([30, 20]);
-    expect(defaultConfig.grassMax / 2).toBe(5);
+    expect(defaultConfig.grassMax).toBe(5);
+    expect(defaultConfig.grassGrowthPerSecond).toBe(0.25);
+    expect(defaultConfig.herbivore.energyDrainPerSecond).toBe(2);
+    expect(defaultConfig.carnivore.energyDrainPerSecond).toBe(0.33);
     for (const kind of ['herbivore', 'carnivore'] as const) {
       expect(defaultConfig[kind].initialCount).toBe(10);
       expect(defaultConfig[kind].maxEnergy / 2).toBe(10);
