@@ -1,6 +1,6 @@
-﻿# Tickzustand und Animation
+# Tickzustand und Animation
 
-Die Simulation hat eine einzige Regeluhr: `tick(state, config, random)` rechnet exakt 1/60 Simulationssekunde weiter. Der Aufruf verändert die Eingabe nicht. `initialize` erzeugt eindeutige Startpositionen, halbe Energien und über mehrere Ticks verteilte Bereitschaften. Eine Bildabfrage zieht keine Zufallszahlen.
+Die Simulation hat eine einzige Regeluhr: `tick(state, config, random)` rechnet exakt 1/60 Simulationssekunde weiter. Der Aufruf verändert die Eingabe nicht. `initialize` erzeugt eindeutige Startpositionen, die konfigurierte Startenergie jeder Art und über mehrere Ticks verteilte Bereitschaften. Eine Bildabfrage zieht keine Zufallszahlen.
 
 ## Tickreihenfolge
 

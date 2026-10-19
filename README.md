@@ -1,31 +1,129 @@
-# Wabenökosystem
+# Welt der Waben
 
-Mit Node.js ab 22.12 im Projektverzeichnis `npm install` und `npm run dev` ausführen. Die von Vite angezeigte Adresse öffnen. `npm test` prüft Regeln, Geometrie und Wiedergabe; `npm run build` prüft TypeScript und erstellt `dist/`.
+**English** · [Deutsch](README.de.md)
 
-Die Simulation arbeitet mit **60 Ticks pro Simulationssekunde**. Jeder Bewohner hat seinen eigenen Ablauf. Eine lange Mahlzeit oder Teilung hält andere Tiere und das Graswachstum nicht an. Grüne Ovale zeigen Gras, gelbe Sterne Grasfresser und rote Sterne Karnivoren. Die Energie füllt die Sterne zu Dreiecken auf.
+A small ecosystem on a hexagonal grid: grass grows, herbivores feed and divide, and carnivores follow their prey. Watch energy flow through each encounter, one animated step at a time.
 
-Das Spielfeld nutzt die zwischen Bedienung, Status und Legende verfügbare Fensterfläche maximal und bleibt vollständig und unverzerrt sichtbar. Es gibt keine feste maximale Seitenbreite. Bei anderem Seitenverhältnis bleiben seitlich oder oben und unten Restflächen. Auch in Pause passt sich die Darstellung an Fensteränderungen, Meldungen und geöffnete Einstellungen an. Lange Einstellungen scrollen innerhalb ihrer Box; in sehr niedrigen Fenstern scrollt zusätzlich die Seite, damit Bedienung und mindestens 160 Pixel Zeichenhöhe erhalten bleiben.
+Built with TypeScript, Canvas 2D and Vite. The application interface is currently in German.
 
-**Pause / Weiter** friert sämtliche Vorgänge ein oder setzt sie fort. **Einzelschritt** führt genau einen Tick weiter, auch mitten in einer Bewegung. **Neustart** verteilt beide Arten mit den aktiven Einstellungen neu und verwirft laufende Aktionen. **Tempo** bietet 0,25× bis 8×: Bei 1× verstreichen 60 Ticks pro Realzeitsekunde, bei 2× sind es 120. Neustart behält die Auswahl; Neuladen verwendet gespeicherte Einstellungen oder die Programmstandards. Der Status zeigt Tick, Simulationszeit und aktuelle Populationen.
+[Overview](#overview) · [Screenshots](#screenshots) · [Quick start](#quick-start) · [Controls](#controls) · [Simulation rules](#simulation-rules) · [Settings and units](#settings-and-units) · [Development](#development)
 
-Eine Spitze streckt sich zum Zielzentrum. Während des Aussaugens halten die Spitzen; anschließend ziehen die beiden anderen nacheinander nach. Die Aussaugdauer hängt von der tatsächlich übertragenen Energie ab. Überschüssiges und neu gewachsenes Gras bleibt erhalten. Überlebt eine teilweise ausgesaugte Beute, zieht der Karnivor seine Spitze zurück und die Beute bleibt in ihrer Zelle. Erst nach vollständigem Aufzehren zieht der Jäger auf die Beutezelle.
+## Overview
 
-Bei Teilung entstehen zwei Hälften mit gleicher Energie. Sind zwei Nachbarn frei, ziehen beide hinaus; bei einem bleibt eine Hälfte am Ursprung. Jede Hälfte nimmt lokal Gras auf und beendet ihre eigene Bewegung. Populationen können aussterben; Neustart beginnt einen neuen Zufallslauf.
+- **Independent residents:** movement, feeding and division run asynchronously on a clock of 60 ticks per simulation second.
+- **Visible energy transfer:** residents reach into the next cell, absorb food while holding contact, then complete their step. More transferred energy takes more time.
+- **Animated division:** a resident splits into two halves with equal energy. Each half follows its own path when space is available.
+- **Editable settings:** adjust 24 parameters, save them locally in your browser, or return to the defaults.
+- **Responsive field:** the whole grid fits the available window area without distortion, including while paused.
 
-## Konfiguration und Einheiten
+## Screenshots
 
-Die einklappbare Box **Einstellungen** enthält alle 24 Parameter, gruppiert nach Feld und Nahrung, beiden Arten und Aktionszeiten. Eingaben sind zunächst ein Entwurf; die laufende Simulation verwendet weiter ihre aktiven Werte. **Übernehmen & neu starten** validiert alle Werte und beginnt einen neuen Lauf bei Tick null. Eine pausierte Simulation bleibt dabei pausiert. Ungültige Werte werden mit einer Erklärung abgewiesen.
+![The hexagonal ecosystem with green grass, yellow herbivores and red carnivores](docs/images/simulation.png)
 
-**Startenergie** bestimmt separat je Art, mit wie viel Energie die Tiere beim Kartenstart und bei Neustart beginnen (Standard jeweils 10). Der Wert muss größer als null und höchstens so groß wie die jeweilige Maximalenergie sein. Eine Änderung der Maximalenergie verändert die Startenergie nicht automatisch. Bei Teilung wird weiterhin die aktuelle Energie halbiert. Ältere gespeicherte Einstellungen ohne Startenergie werden mit der bisherigen Hälfte der jeweiligen Maximalenergie geladen.
+*The simulation paused during a run. Symbol fullness shows energy; extended tips show local actions.*
 
-**Im Browser speichern** bewahrt den gültigen Formularentwurf für spätere Besuche, ohne den aktuellen Lauf zu verändern. Beim nächsten Laden wird ein neuer Lauf mit diesen Einstellungen gestartet. **Standardwerte** füllt das Formular mit den aktuellen Programmstandards. Anschließend übernehmen startet damit einen Lauf; anschließend speichern macht sie auch für den nächsten Besuch gültig. Speichern und Übernehmen sind getrennte Aktionen. Hinweise unter dem Formular zeigen, ob Werte bereits aktiv oder gespeichert sind.
+![The open settings panel with simulation parameters and buttons for applying, saving and restoring defaults](docs/images/settings.png)
 
-Die Tempoauswahl im Kopf wirkt sofort und aktualisiert zugleich den Zeitfaktor im Formular; andere Entwurfswerte bleiben erhalten. Sie speichert nichts automatisch. Änderungen am Starttempo im Formular werden erst durch Übernehmen aktiv. Neustart verwendet immer aktive Werte und lässt offene Entwurfsänderungen bestehen.
+*The settings panel scrolled to its actions. Its content scrolls independently of the field.*
 
-Gespeichert werden nur Einstellungen in `localStorage`, keine Tiere oder Tickstände. Die Speicherung gilt für diesen Browser und dieselbe Adresse einschließlich Protokoll und Port; das Löschen der Browserdaten entfernt sie. Bei ungültigen gespeicherten Daten oder blockiertem Speicher startet die Anwendung mit Standards und zeigt einen Hinweis. Bearbeiten und Übernehmen bleiben möglich.
+## Quick start
 
-`src/config.ts` enthält `defaultConfig`. `grassGrowthPerSecond` ist Gras je Zelle und Simulationssekunde; `energyDrainPerSecond` ist Verbrauch je lebendem Tier und Simulationssekunde. Beide Raten werden auf 60 Ticks verteilt, auch während Bewegung, Warten, Transfer und Teilung. Die bisherigen numerischen Grundwerte werden als Sekunderaten übernommen: Wachstum 1 und Verbrauch 2. `energyTransferPerSecond` ist Bruttoenergie je Simulationssekunde (Standard 8), getrennt vom Verbrauch. 4 übertragene Energie benötigt damit 30 Ticks, 8 benötigt 60 Ticks. Wirkungsgrade bestimmen, wie viel Nahrung dafür entnommen wird. Das bei Kontakt festgelegte Aufnahmebudget wird durch laufenden Verbrauch nicht nachträglich erhöht.
+Requires **Node.js 22.12 or newer** and npm.
 
-`speedMultiplier` (Standard 2) ändert die Realzeitgeschwindigkeit. Bewegungs- und Wartezeiten sind positive ganze Tickzahlen. `width`/`height` bestimmen das begrenzte Wabenfeld, `grassMax` das Grasmaximum. Jede Art hat `initialCount`, `initialEnergy`, `maxEnergy`, `energyDrainPerSecond` und `divisionFraction`. Ein eingeschlossener Grasfresser muss langfristig netto Energie verlieren: Wachstum mal Graswirkungsgrad muss kleiner als sein Verbrauch sein.
+```sh
+git clone https://github.com/zebrajaeger/welt-der-waben.git
+cd welt-der-waben
+npm install
+npm run dev
+```
 
-Entwicklerhinweise und Browserprüfungen stehen in [docs/animation.md](docs/animation.md). Die [Zeitlupenansicht](http://localhost:5173/scripts/grass-division-demo.html) zeigt reproduzierbare lokale Bewegungen mit Tickregler.
+Open the address printed by Vite. If you already have the repository, run the last two commands from its root directory.
+
+## Controls
+
+The table uses the labels shown in the German interface.
+
+| Control | What it does |
+| --- | --- |
+| **Pause / Weiter** | Freeze every process or resume from the same point. |
+| **Einzelschritt** | While paused, advance exactly one tick: 1/60 of a simulation second, even during movement. |
+| **Neustart** | Start a new random world with the active settings; keep the pause state and current speed. |
+| **Tempo** | Change playback immediately, from 0.25× to 8×. At 1×, 60 ticks pass per real second; at 2×, 120. |
+| **Einstellungen** | Expand or collapse the parameter panel. |
+
+The status line shows the tick, elapsed simulation time and population of each species. Resizing the window changes only the projection. Different aspect ratios leave some empty space around the centered grid.
+
+## Simulation rules
+
+| Resident | Appearance | Behavior |
+| --- | --- | --- |
+| Grass | Green circles or ovals | Grows in small increments in every cell, up to its maximum. |
+| Herbivore | Yellow three-pointed star | Chooses an available neighboring cell with the most grass, without avoiding carnivores. |
+| Carnivore | Red three-pointed star | Claims at most one reachable herbivore per hunt. |
+
+A low-energy animal appears as three thin arms; as its energy rises, the star fills into a triangle.
+
+### Feeding and movement
+
+The nearest tip first reaches the target cell's center. All tips hold their pose during feeding; the other two tips then follow in sequence. The leading tip moves to its final position as the step finishes. A hunter times contact to its prey's arrival.
+
+Grass and prey energy transfer at a constant rate, so longer meals take longer. Only usable food is removed: excess grass remains, and a partly drained herbivore can survive. The hunter withdraws if the prey survives and enters its cell only when the prey is fully consumed. Other residents and grass growth continue throughout the meal.
+
+### Energy and division
+
+Both species consume energy every tick, including while waiting, moving, feeding or dividing. An animal dies when its energy is exhausted. A trapped herbivore cannot live indefinitely on regrowing grass.
+
+Above its division threshold, a resident can split if at least one neighboring cell is free. Its remaining energy is divided equally. With two free neighbors, both halves move out in different directions; with only one, one half stays. Moving herbivore halves feed in their destination cells. Each half completes its own movement and waiting period before acting again.
+
+Populations may become extinct. **Neustart** begins another random run.
+
+## Settings and units
+
+Form edits are a **draft** until explicitly applied. The panel reports whether the displayed values are active or saved.
+
+| Action | Effect |
+| --- | --- |
+| **Übernehmen & neu starten** | Validate the draft and start a new world at tick zero. A paused simulation stays paused. Does not save the draft. |
+| **Im Browser speichern** | Save the valid draft for later visits. Does not change or restart the current world. |
+| **Standardwerte** | Restore the current program defaults in the form. Then apply them to start a run, or save them for later visits. |
+
+The top **Tempo** selector works immediately and also updates the draft's speed field, preserving other edits. Changing **Starttempo (×)** inside the form takes effect only when applied. Neither action saves automatically. **Neustart** uses active values and preserves unapplied form edits.
+
+### Parameters
+
+Defaults live in [src/config.ts](src/config.ts). All rates use **simulation time**; one simulation second is always 60 ticks.
+
+| Group | Parameters and defaults |
+| --- | --- |
+| Field | `width` × `height`: 30 × 20 cells, with fixed boundaries. |
+| Grass | `grassMax`: 10; `grassGrowthPerSecond`: 1 per cell; `grassEfficiency`: 1. |
+| Predation | `preyEfficiency`: 0.5; `energyTransferPerSecond`: 8 gross energy per second. |
+| Playback | `speedMultiplier`: 2; changes real-time playback, not the rates per simulation second. |
+| Each species | `initialCount`: 10; `initialEnergy`: 10; `maxEnergy`: 20; `energyDrainPerSecond`: 2; `divisionFraction`: 0.75. |
+| Action durations | `approachTicks`: 12; `followTicks`: 6 per tip; `waitTicks`: 12; `swellTicks`: 6; `divisionApproachTicks`: 8; `divisionFollowTicks`: 4 per tip. |
+
+Start energy is set independently for each species. It must be greater than zero and no larger than that species' maximum. Changing the maximum does not automatically change start energy. Grass starts at half its maximum, except under initial herbivores, where it starts at zero.
+
+Growth and consumption are spread across ticks. At a transfer rate of 8, transferring 4 energy takes 30 ticks and 8 takes 60 ticks. Efficiencies determine how much food is removed. A meal's budget is fixed at contact; energy consumption does not keep extending it.
+
+Invalid configurations are rejected with an explanation. Initial populations must fit the field, action durations must be positive whole ticks, and division fractions must lie strictly between 0 and 1. Grass growth multiplied by grass efficiency must be lower than herbivore consumption per simulation second.
+
+### Browser storage
+
+Only settings are saved in `localStorage`, not animals or tick counts. Storage belongs to the current browser and address, including protocol and port. Clearing browser data removes it. Reloading starts a fresh world with saved settings, or the program defaults if no valid settings can be loaded.
+
+Invalid or blocked storage produces a notice; editing and applying settings remain usable. Older saved configurations without start energy retain their values and use the former half-maximum start energy for each species.
+
+## Development
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start Vite with automatic browser updates when source files change. |
+| `npm test` | Check simulation rules, geometry, settings and playback, including long runs. |
+| `npm run build` | Check TypeScript and create a production bundle in `dist/`. |
+
+Further reading:
+
+- [Animation, tick order and browser checks](docs/animation.md) — technical notes in German.
+- [Updating the README screenshots](docs/screenshots.md).
+- [Local slow-motion examples](scripts/grass-division-demo.html) — with Vite running, open `/scripts/grass-division-demo.html` under its local address. These examples illustrate short and long meals, division and surviving prey.
