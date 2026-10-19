@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="de">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teilung in Zeitlupe</title>
+<style>
+  :root { color-scheme: dark; font: 16px system-ui; background: #101c1b; color: #e8f1df; }
+  body { max-width: 1000px; margin: auto; padding: 24px; }
+  h1 { font-size: 28px; } p { line-height: 1.5; }
+  .controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 24px 0; }
+  button { font: inherit; padding: 8px 12px; cursor: pointer; } input { flex: 1; min-width: 180px; }
+  section { padding: 16px; margin: 16px 0; border: 1px solid #35534a; border-radius: 10px; }
+  canvas { display: block; width: 100%; } output { font-variant-numeric: tabular-nums; }
+</style>
+<h1>Teilung in Zeitlupe</h1>
+<p>Ein Simulationsschritt dauert hier sechs Sekunden. Das Gras bleibt während des Hinausschreitens stehen und verschwindet bei der Ankunft der Hälften. Dann steigt ihre Energie. Der Regler kann exakt vor und nach diesen Zeitpunkt gestellt werden.</p>
+<div class="controls">
+  <button id="play">Abspielen</button><button id="before">Vor Ankunft</button><button id="after">Nach Ankunft</button>
+  <label for="time">Fortschritt</label><input id="time" type="range" min="0" max="1000" value="300"><output id="position"></output>
+</div>
+<div id="cases"></div>
+<script type="module">
+  import { defaultConfig } from '/src/config.ts';
+  import { transition } from '/src/simulation.ts';
+  import { planAnimation, sampleAnimation } from '/src/animation.ts';
+  import { layout, render } from '/src/render.ts';
+  const cases = [2, 3].map(width => {
+    const config = { ...defaultConfig, width, height: 1,
+      herbivore: { ...defaultConfig.herbivore, initialCount: 0 }, carnivore: { ...defaultConfig.carnivore, initialCount: 0 } };
+    const state = { step: 0, nextId: 100, grass: Array(width).fill(10), animals: [
+      { id: 1, column: 0, row: 0, species: 'herbivore', energy: 19, activeFrom: 1 },
+    ] };
+    const section = document.createElement('section'); section.dataset.case = width === 2 ? 'one' : 'two';
+    const heading = document.createElement('h2'); heading.textContent = width === 2 ? 'Eine freie Zelle: Eine Hälfte bleibt' : 'Zwei freie Zellen: Beide Hälften ziehen hinaus';
+    const canvas = document.createElement('canvas'), details = document.createElement('p');
+    const grass = document.createElement('span'); grass.className = 'grass';
+    const energy = document.createElement('span'); energy.className = 'energy';
+    details.append(grass, document.createElement('br'), energy); section.append(heading, canvas, details);
+    document.querySelector('#cases').append(section);
+    const field = layout(config, 900, 220); canvas.width = Math.ceil(field.width); canvas.height = Math.ceil(field.height);
+    return { config, plan: planAnimation(transition(state, config, () => 0)), context: canvas.getContext('2d'), field, grass, energy };
+  });
+  const slider = document.querySelector('#time'), play = document.querySelector('#play');
+  let time = 0.3, playing = false, lastTime;
+  function draw() {
+    slider.value = Math.round(time * 1000);
+    document.querySelector('#position').textContent = `t = ${time.toFixed(3)}`;
+    for (const item of cases) {
+      const frame = sampleAnimation(item.plan, time);
+      render(item.context, frame.state, item.config, item.field, frame.shapes);
+      item.grass.textContent = `Gras je Zelle: ${frame.state.grass.join(' · ')}`;
+      item.energy.textContent = `Energie: ${frame.state.animals.map(animal => animal.energy.toFixed(1)).join(' · ')}`;
+    }
+    play.textContent = playing ? 'Pause' : 'Abspielen';
+  }
+  function frame(now) {
+    if (!playing) return;
+    if (lastTime !== undefined) time = Math.min(1, time + (now - lastTime) / 6000);
+    lastTime = now;
+    if (time >= 1) playing = false;
+    draw(); if (playing) requestAnimationFrame(frame);
+  }
+  function jump(value) { playing = false; lastTime = undefined; time = value; draw(); }
+  play.addEventListener('click', () => {
+    playing = !playing; lastTime = undefined;
+    if (playing) { if (time >= 1) time = 0; requestAnimationFrame(frame); }
+    draw();
+  });
+  slider.addEventListener('input', () => jump(Number(slider.value) / 1000));
+  document.querySelector('#before').addEventListener('click', () => jump(0.499));
+  document.querySelector('#after').addEventListener('click', () => jump(0.5));
+  draw();
+</script>
+</html>

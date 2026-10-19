@@ -1,6 +1,7 @@
 import type { Config } from './config';
 import type { Animal, State } from './simulation';
-import type { Position } from './hex';
+import { hexCenter, type Position } from './hex';
+import { starPoints, type Tips } from './animation';
 
 export const colors = { herbivore: '#ffd285', carnivore: '#ff7b87' };
 export interface Layout { radius: number; width: number; height: number }
@@ -11,17 +12,20 @@ export function layout(config: Config, width: number, maxHeight: number): Layout
   return { radius, width: unitsWide * radius + 12, height: unitsHigh * radius + 12 };
 }
 export function center(position: Position, radius: number): [number, number] {
-  return [6 + Math.sqrt(3) * radius * (position.column + 0.5 + (position.row % 2) / 2),
-    6 + radius * (1 + 1.5 * position.row)];
+  const [x, y] = hexCenter(position);
+  return [6 + x * radius, 6 + y * radius];
 }
 
 /** Three radial arms thicken into wedges; at full energy the wedges form a triangle. */
 export function drawAnimal(context: CanvasRenderingContext2D, x: number, y: number, radius: number, energyFraction: number, color: string): void {
+  drawShape(context, starPoints([x, y], radius), energyFraction, color);
+}
+
+/** The centroid moves continuously with the tips and also supports the rest pose. */
+export function drawShape(context: CanvasRenderingContext2D, points: Tips, energyFraction: number, color: string): void {
   const fraction = Math.max(0, Math.min(1, energyFraction));
-  const points = Array.from({ length: 3 }, (_, i) => {
-    const angle = -Math.PI / 2 + i * 2 * Math.PI / 3;
-    return [x + Math.cos(angle) * radius, y + Math.sin(angle) * radius];
-  });
+  const x = points.reduce((sum, point) => sum + point[0], 0) / 3;
+  const y = points.reduce((sum, point) => sum + point[1], 0) / 3;
   context.strokeStyle = color;
   context.fillStyle = color;
   context.lineWidth = 1.2;
@@ -49,7 +53,7 @@ export function drawAnimal(context: CanvasRenderingContext2D, x: number, y: numb
   }
 }
 
-export function render(context: CanvasRenderingContext2D, state: State, config: Config, field: Layout): void {
+export function render(context: CanvasRenderingContext2D, state: State, config: Config, field: Layout, shapes?: ReadonlyMap<number, Tips>): void {
   const { radius } = field;
   context.clearRect(0, 0, field.width, field.height);
   context.lineWidth = 0.7;
@@ -70,8 +74,14 @@ export function render(context: CanvasRenderingContext2D, state: State, config: 
     }
   }
   for (const animal of state.animals) {
-    const [x, y] = center(animal, radius);
-    drawAnimal(context, x, y, radius * 0.73, animal.energy / config[animal.species].maxEnergy, colors[animal.species]);
+    const shape = shapes?.get(animal.id);
+    if (shape) {
+      const pixels = shape.map(([x, y]) => [6 + x * radius, 6 + y * radius]) as Tips;
+      drawShape(context, pixels, animal.energy / config[animal.species].maxEnergy, colors[animal.species]);
+    } else {
+      const [x, y] = center(animal, radius);
+      drawAnimal(context, x, y, radius * 0.73, animal.energy / config[animal.species].maxEnergy, colors[animal.species]);
+    }
   }
 }
 

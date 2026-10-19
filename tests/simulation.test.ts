@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultConfig, type Config } from '../src/config';
 import { cellIndex } from '../src/hex';
-import { growGrass, initialize, moveHerbivores, feedHerbivores, divide, hunt, carnivorePhase, step, type State, type Animal } from '../src/simulation';
+import { growGrass, initialize, moveHerbivores, feedHerbivores, divide, hunt, carnivorePhase, step, transition, type State, type Animal, type SimulationEvent } from '../src/simulation';
 
 export function seeded(seed = 37): () => number {
   return () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
@@ -45,6 +45,64 @@ describe('initialization and grass', () => {
   });
 });
 
+describe('recorded transitions', () => {
+  it('matches step and consumes exactly the same random sequence without mutating inputs', () => {
+    let state = initialize(defaultConfig, seeded());
+    for (let i = 0; i < 100; i++) {
+      let plainDraws = 0, recordedDraws = 0;
+      const plainRandom = seeded(i), recordedRandom = seeded(i);
+      const original = structuredClone(state);
+      const plain = step(state, defaultConfig, () => { plainDraws++; return plainRandom(); });
+      const recorded = transition(state, defaultConfig, () => { recordedDraws++; return recordedRandom(); });
+      expect(recorded.after).toEqual(plain);
+      expect(recordedDraws).toBe(plainDraws);
+      expect(state).toEqual(original);
+      expect(recorded.before).toEqual(original);
+      state = plain;
+    }
+  });
+  it('retains a moved and consumed prey and the exact hunter before and after feeding', () => {
+    const state = stateWith([animal(1, 0, 0, 5), animal(2, 2, 0, 5, 'carnivore')]);
+    state.grass[1] = 9;
+    const result = transition(state, config, () => 0);
+    expect(result.events).toEqual([
+      { type: 'move', animal: animal(1, 0, 0, 5), to: { column: 1, row: 0 } },
+      { type: 'hunt', animal: animal(2, 2, 0, 5, 'carnivore'), prey: animal(1, 1, 0, 13), energyAfter: 11.5 },
+    ]);
+    expect(result.grown.grass[1]).toBe(10);
+    expect(result.herbivores.animals[0]).toEqual(animal(1, 1, 0, 13));
+    expect(result.hunted.animals).toEqual([animal(2, 1, 0, 11.5, 'carnivore')]);
+    expect(result.after.animals).toEqual([animal(2, 1, 0, 9.5, 'carnivore')]);
+    result.after.animals[0].energy = 1;
+    expect(result.hunted.animals[0].energy).toBe(11.5);
+    expect(result.events[1]).toMatchObject({ animal: { energy: 5 }, prey: { energy: 13 } });
+  });
+  it('records a birth before a hunt of that newborn, with no newborn movement', () => {
+    const state = stateWith([animal(1, 0, 0, 19), animal(2, 1, 0, 5, 'carnivore')], 10);
+    const choices = [0, 0, 0.3, 0, 0, 0];
+    const result = transition(state, config, () => choices.shift() ?? 0);
+    expect(result.events.map(e => e.type)).toEqual(['move', 'birth', 'hunt']);
+    expect(result.events[1]).toMatchObject({ type: 'birth', parentId: 1, animal: { id: 100, column: 0, row: 0, activeFrom: 3 } });
+    expect(result.events[2]).toMatchObject({ type: 'hunt', animal: { id: 2 }, prey: { id: 100, column: 0, row: 0 } });
+  });
+  it('records only the winning hunter of stationary prey and a subsequent birth at the vacated cell', () => {
+    const cfg = { ...config, width: 3, height: 1 };
+    const state = { ...stateWith([animal(1, 0, 0, 18, 'carnivore'), animal(2, 2, 0, 5, 'carnivore'), animal(3, 1, 0)]), grass: [0, 0, 0] };
+    const result = transition(state, cfg, () => 0);
+    expect(result.events.map(e => e.type)).toEqual(['hunt', 'birth']);
+    expect(result.events[0]).toMatchObject({ type: 'hunt', animal: { id: 1, column: 0 }, prey: { id: 3, column: 1 } });
+    expect(result.events[1]).toMatchObject({ type: 'birth', parentId: 1, animal: { column: 0, row: 0 } });
+    expect(result.after.animals.find(a => a.id === 2)?.column).toBe(2);
+  });
+  it('records death after movement and carnivore death after the hunt phase', () => {
+    const result = transition(stateWith([animal(1, 0, 0, 1), animal(2, 4, 3, 1, 'carnivore')]), config, () => 0);
+    expect(result.events.map(e => e.type)).toEqual(['move', 'death', 'death']);
+    expect(result.events[1]).toMatchObject({ animal: { id: 1, column: 1, row: 0, energy: 0 } });
+    expect(result.events[2]).toMatchObject({ animal: { id: 2, energy: -1 } });
+    expect(result.after.animals).toHaveLength(0);
+  });
+});
+
 describe('simultaneous herbivore movement', () => {
   it('chooses the grass maximum even next to a predator and moves only one cell', () => {
     const state = stateWith([animal(1, 0, 0), animal(2, 2, 0, 10, 'carnivore')]);
@@ -80,6 +138,28 @@ describe('simultaneous herbivore movement', () => {
 });
 
 describe('feeding and energy', () => {
+  it('herbivore halves eat the grass in newly entered division cells immediately', () => {
+    const cfg = { ...config, width: 3, height: 1 };
+    const state = { ...stateWith([animal(1, 0, 0, 19)]), grass: [10, 10, 10] };
+    const recorded = transition(state, cfg, () => 0);
+    expect(recorded.after.animals.map(a => a.column)).toEqual([2, 0]);
+    expect(recorded.after.grass).toEqual([0, 0, 0]);
+    expect(recorded.after.animals.map(a => a.energy)).toEqual([19, 19]);
+    expect(recorded.after.nextId).toBe(101);
+  });
+  it('only feeds the departing half when one division cell is free and applies efficiency and caps', () => {
+    const cfg = { ...config, width: 2, height: 1, grassEfficiency: 0.5 };
+    const state = { ...stateWith([animal(1, 0, 0, 19)]), grass: [10, 10] };
+    const recorded = transition(state, cfg, () => 0);
+    expect(recorded.after.grass).toEqual([0, 0]);
+    expect(recorded.after.animals.map(a => a.energy)).toEqual([9, 14]);
+    expect(recorded.after.animals).toHaveLength(2);
+    const capConfig = { ...config, width: 3, height: 1, grassMax: 30, grassGrowth: 0 };
+    const full = transition({ ...state, grass: [30, 0, 30] }, capConfig, () => 0);
+    expect(full.after.grass).toEqual([0, 0, 0]);
+    expect(full.after.animals.map(a => a.energy)).toEqual([20, 20]);
+    expect(full.after.animals).toHaveLength(2);
+  });
   it('clears grass, applies efficiency, caps before drain, and removes starved animals', () => {
     const state = stateWith([animal(1, 0, 0, 19), animal(2, 1, 0, 2), animal(3, 2, 0, 5)]);
     state.grass[0] = 10; state.grass[2] = 3;
@@ -108,6 +188,38 @@ describe('feeding and energy', () => {
 });
 
 describe.each(['herbivore', 'carnivore'] as const)('%s division', species => {
+  it('uses one free cell with a stationary half, but moves both halves if two are available', () => {
+    for (const width of [1, 2, 3]) {
+      const cfg = { ...config, width, height: 1 };
+      const parent = animal(1, width === 3 ? 1 : 0, 0, 18, species);
+      const state = { ...stateWith([parent]), grass: Array(width).fill(7) };
+      const events: SimulationEvent[] = [];
+      divide(state, cfg, species, () => 0, event => events.push(event));
+      expect(state.animals).toHaveLength(width === 1 ? 1 : 2);
+      if (width === 1) {
+        expect(parent.energy).toBe(18); expect(events).toHaveLength(0);
+      } else {
+        expect(state.animals.map(a => a.energy)).toEqual(species === 'herbivore' ? [width === 2 ? 9 : 16, 16] : [9, 9]);
+        expect(parent.column).toBe(width === 2 ? 0 : 2);
+        expect(state.animals[1].column).toBe(width === 2 ? 1 : 0);
+        expect(events[0]).toMatchObject({ type: 'birth', parentBefore: { column: width === 3 ? 1 : 0, energy: 18 }, parentAfter: { column: width === 3 ? 2 : 0, energy: 9 } });
+        if (width === 3) expect(state.animals.some(a => a.column === 1)).toBe(false);
+      }
+      expect(state.grass).toEqual(species === 'herbivore' && width > 1 ? width === 2 ? [7, 0] : [0, 7, 0] : Array(width).fill(7));
+    }
+  });
+  it('resolves two-target conflicts atomically and does not halve the losing parent', () => {
+    for (const value of [0, 0.999]) {
+      const cfg = { ...config, width: 5, height: 1 };
+      const state = { ...stateWith([animal(1, 1, 0, 18, species), animal(2, 3, 0, 18, species)]), grass: Array(5).fill(0) };
+      divide(state, cfg, species, () => value);
+      expect(state.animals).toHaveLength(3);
+      expect(state.animals.filter(a => a.energy === 9)).toHaveLength(2);
+      expect(state.animals.filter(a => a.energy === 18)).toHaveLength(1);
+      expect(new Set(state.animals.map(a => a.column)).size).toBe(3);
+      expect(state.animals.find(a => a.energy === 18)?.id).toBe(value === 0 ? 2 : 1);
+    }
+  });
   it('uses a strict threshold and shares energy only for a successful birth', () => {
     const state = stateWith([animal(1, 0, 0, 15, species)]);
     divide(state, config, species, () => 0);
@@ -115,9 +227,9 @@ describe.each(['herbivore', 'carnivore'] as const)('%s division', species => {
     state.animals[0].energy = 18;
     state.grass[1] = 8;
     divide(state, config, species, () => 0);
-    expect(state.animals.map(a => a.energy)).toEqual([9, 9]);
+    expect(state.animals.map(a => a.energy)).toEqual(species === 'herbivore' ? [9, 17] : [9, 9]);
     expect(state.animals[1]).toMatchObject({ column: 1, row: 0, activeFrom: 2 });
-    expect(state.grass[1]).toBe(8);
+    expect(state.grass[1]).toBe(species === 'herbivore' ? 0 : 8);
   });
   it('resolves birth conflicts without splitting the losing parent', () => {
     const state = stateWith(Array.from({ length: 20 }, (_, i) => animal(i + 1, i % 5, Math.floor(i / 5), 18, species)));
@@ -177,7 +289,7 @@ describe('carnivore phase', () => {
     const state = stateWith([animal(1, 0, 0, 18, 'carnivore'), animal(2, 1, 0, 8)]);
     carnivorePhase(state, config, () => 0);
     expect(state.animals).toEqual([
-      animal(1, 1, 0, 9, 'carnivore'),
+      animal(1, 2, 0, 9, 'carnivore'),
       { ...animal(100, 0, 0, 9, 'carnivore'), activeFrom: 2 },
     ]);
   });
@@ -212,9 +324,9 @@ describe('complete steps', () => {
     const choices = [0, 0, 0.3, 0, 0, 0];
     const next = step(state, config, () => choices.shift() ?? 0);
     expect(next.animals.some(a => a.id === 100)).toBe(false);
-    expect(next.animals.find(a => a.id === 1)?.energy).toBe(9);
-    expect(next.animals.find(a => a.id === 2)?.energy).toBe(7.5);
-    expect(next.grass[0]).toBe(10);
+    expect(next.animals.find(a => a.id === 1)?.energy).toBe(19);
+    expect(next.animals.find(a => a.id === 2)?.energy).toBe(12.5);
+    expect(next.grass[0]).toBe(0);
   });
   it('keeps positions, identities, grass and energy valid across long seeded runs', () => {
     for (let seed = 0; seed < 10; seed++) {

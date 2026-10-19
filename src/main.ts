@@ -1,7 +1,8 @@
 import './style.css';
 import { defaultConfig, validateConfig } from './config';
-import { initialize, step } from './simulation';
+import { initialize } from './simulation';
 import { drawLegend, layout, render } from './render';
+import { Playback } from './playback';
 
 const status = document.querySelector<HTMLElement>('#status')!;
 const canvas = document.querySelector<HTMLCanvasElement>('#field')!;
@@ -13,42 +14,54 @@ const reset = document.querySelector<HTMLButtonElement>('#reset')!;
 try {
   validateConfig(defaultConfig);
   if (!context) throw new Error('Dieser Browser unterstützt Canvas 2D nicht.');
-  let state = initialize(defaultConfig);
-  let playing = true;
-  let timer: ReturnType<typeof setInterval>;
+  const playback = new Playback(initialize(defaultConfig), defaultConfig);
+  const listeners = new AbortController();
+  let frameRequest: number | undefined;
 
   const draw = () => {
     const field = layout(defaultConfig, Math.max(160, canvas.parentElement!.clientWidth), Math.max(220, window.innerHeight - 270));
     const ratio = window.devicePixelRatio || 1;
-    canvas.width = Math.round(field.width * ratio);
-    canvas.height = Math.round(field.height * ratio);
+    const width = Math.round(field.width * ratio), height = Math.round(field.height * ratio);
+    if (canvas.width !== width) canvas.width = width;
+    if (canvas.height !== height) canvas.height = height;
     canvas.style.width = `${field.width}px`;
     canvas.style.height = `${field.height}px`;
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    render(context, state, defaultConfig, field);
+    const frame = playback.frame;
+    render(context, frame.state, defaultConfig, field, frame.shapes);
+    const state = playback.state;
     const herbivores = state.animals.filter(a => a.species === 'herbivore').length;
-    status.textContent = `Schritt ${state.step} · ${herbivores} Grasfresser · ${state.animals.length - herbivores} Karnivoren`;
+    const label = `Schritt ${state.step} · ${herbivores} Grasfresser · ${state.animals.length - herbivores} Karnivoren`;
+    if (status.textContent !== label) status.textContent = label;
+    toggle.textContent = playback.running ? 'Pause' : 'Weiter';
+    toggle.setAttribute('aria-pressed', String(playback.running));
+    singleStep.disabled = !playback.canSingleStep;
   };
-  const advance = () => { state = step(state, defaultConfig); draw(); };
+  const animate = (now: number) => {
+    frameRequest = undefined;
+    playback.tick(now);
+    draw();
+    schedule();
+  };
   const schedule = () => {
-    clearInterval(timer);
-    if (playing) timer = setInterval(advance, 1000 / defaultConfig.stepsPerSecond);
-    toggle.textContent = playing ? 'Pause' : 'Weiter';
-    toggle.setAttribute('aria-pressed', String(playing));
-    singleStep.disabled = playing;
+    if (frameRequest !== undefined) cancelAnimationFrame(frameRequest);
+    frameRequest = playback.running ? requestAnimationFrame(animate) : undefined;
   };
-  toggle.addEventListener('click', () => { playing = !playing; schedule(); });
-  singleStep.addEventListener('click', advance);
-  reset.addEventListener('click', () => { state = initialize(defaultConfig); draw(); });
+  toggle.addEventListener('click', () => { playback.toggle(performance.now()); draw(); schedule(); }, { signal: listeners.signal });
+  singleStep.addEventListener('click', () => { playback.singleStep(performance.now()); draw(); schedule(); }, { signal: listeners.signal });
+  reset.addEventListener('click', () => { playback.reset(initialize(defaultConfig), performance.now()); draw(); schedule(); }, { signal: listeners.signal });
   const observer = new ResizeObserver(draw);
   observer.observe(canvas.parentElement!);
-  window.addEventListener('resize', draw);
+  window.addEventListener('resize', draw, { signal: listeners.signal });
   for (const symbol of document.querySelectorAll<HTMLCanvasElement>('[data-energy]')) {
     const ctx = symbol.getContext('2d');
     if (ctx) drawLegend(ctx, symbol.dataset.species === 'carnivore' ? 'carnivore' : 'herbivore', Number(symbol.dataset.energy));
   }
   draw(); schedule();
-  import.meta.hot?.dispose(() => { clearInterval(timer); observer.disconnect(); window.removeEventListener('resize', draw); });
+  import.meta.hot?.dispose(() => {
+    if (frameRequest !== undefined) cancelAnimationFrame(frameRequest);
+    observer.disconnect(); listeners.abort();
+  });
 } catch (error) {
   status.textContent = error instanceof Error ? error.message : String(error);
   status.setAttribute('role', 'alert');

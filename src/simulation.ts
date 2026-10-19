@@ -16,6 +16,25 @@ export interface State {
   nextId: number;
 }
 
+/** Copies describe resolved actions, never proposals. Their order follows the rule phases. */
+export type SimulationEvent =
+  | { type: 'move'; animal: Animal; to: Position }
+  | { type: 'hunt'; animal: Animal; prey: Animal; energyAfter: number }
+  | { type: 'birth'; parentId: number; animal: Animal; parentBefore: Animal; parentAfter: Animal; sourceCell: number }
+  | { type: 'death'; animal: Animal };
+type Emit = (event: SimulationEvent) => void;
+export interface Transition {
+  before: State;
+  grown: State;
+  fed: State;
+  herbivores: State;
+  hunted: State;
+  drained: State;
+  after: State;
+  events: SimulationEvent[];
+}
+const copyState = (state: State): State => ({ ...state, grass: [...state.grass], animals: state.animals.map(a => ({ ...a })) });
+
 function choose<T>(values: readonly T[], random: Random): T {
   return values[Math.floor(random() * values.length)];
 }
@@ -57,7 +76,7 @@ function propose<T>(proposals: Map<number, T[]>, target: number, applicant: T): 
   proposals.set(target, applicants);
 }
 
-export function moveHerbivores(state: State, config: Config, random: Random): void {
+export function moveHerbivores(state: State, config: Config, random: Random, emit?: Emit): void {
   const snapshot = occupied(state, config);
   const proposals = new Map<number, Animal[]>();
   for (const animal of active(state, 'herbivore')) {
@@ -68,42 +87,66 @@ export function moveHerbivores(state: State, config: Config, random: Random): vo
     propose(proposals, cellIndex(choose(best, random), config.width), animal);
   }
   resolve(proposals, random, (animal, target) => {
+    emit?.({ type: 'move', animal: { ...animal }, to: { column: target % config.width, row: Math.floor(target / config.width) } });
     animal.column = target % config.width;
     animal.row = Math.floor(target / config.width);
   });
 }
 
-export function feedHerbivores(state: State, config: Config): void {
-  for (const animal of active(state, 'herbivore')) {
-    const cell = cellIndex(animal, config.width);
-    animal.energy = Math.min(config.herbivore.maxEnergy, animal.energy + state.grass[cell] * config.grassEfficiency);
-    state.grass[cell] = 0;
-  }
-  drainEnergy(state, config, 'herbivore');
+export function feedHerbivores(state: State, config: Config, emit?: Emit): void {
+  for (const animal of active(state, 'herbivore')) consumeGrass(state, config, animal);
+  drainEnergy(state, config, 'herbivore', emit);
 }
 
-function drainEnergy(state: State, config: Config, species: Species): void {
-  for (const animal of active(state, species)) animal.energy -= config[species].energyDrain;
+function consumeGrass(state: State, config: Config, animal: Animal): void {
+  const cell = cellIndex(animal, config.width);
+  animal.energy = Math.min(config.herbivore.maxEnergy, animal.energy + state.grass[cell] * config.grassEfficiency);
+  state.grass[cell] = 0;
+}
+
+function drainEnergy(state: State, config: Config, species: Species, emit?: Emit): void {
+  for (const animal of active(state, species)) {
+    animal.energy -= config[species].energyDrain;
+    if (animal.energy <= 0) emit?.({ type: 'death', animal: { ...animal } });
+  }
   state.animals = state.animals.filter(a => a.energy > 0);
 }
 
-export function divide(state: State, config: Config, species: Species, random: Random): void {
+export function divide(state: State, config: Config, species: Species, random: Random, emit?: Emit): void {
   const snapshot = occupied(state, config);
-  const proposals = new Map<number, Animal[]>();
+  const proposals: { parent: Animal; childTarget: Position; parentTarget: Position }[] = [];
   const parameters = config[species];
   for (const parent of active(state, species)) {
     if (parent.energy <= parameters.maxEnergy * parameters.divisionFraction) continue;
     const free = neighbors(parent, config.width, config.height).filter(p => !snapshot.has(cellIndex(p, config.width)));
-    if (free.length) propose(proposals, cellIndex(choose(free, random), config.width), parent);
+    if (!free.length) continue;
+    const childTarget = choose(free, random);
+    const remaining = free.filter(p => cellIndex(p, config.width) !== cellIndex(childTarget, config.width));
+    const parentTarget = remaining.length ? choose(remaining, random) : { column: parent.column, row: parent.row };
+    proposals.push({ parent, childTarget, parentTarget });
   }
-  resolve(proposals, random, (parent, target) => {
+  const claimed = new Set<number>();
+  while (proposals.length) {
+    const proposalIndex = Math.floor(random() * proposals.length);
+    const { parent, childTarget, parentTarget } = proposals.splice(proposalIndex, 1)[0];
+    const targets = [cellIndex(childTarget, config.width), cellIndex(parentTarget, config.width)];
+    if (targets.some(target => claimed.has(target))) continue;
+    targets.forEach(target => claimed.add(target));
+    const parentBefore = { ...parent };
     parent.energy /= 2;
-    state.animals.push({ id: state.nextId++, species, column: target % config.width,
-      row: Math.floor(target / config.width), energy: parent.energy, activeFrom: state.step + 1 });
-  });
+    parent.column = parentTarget.column;
+    parent.row = parentTarget.row;
+    const child: Animal = { id: state.nextId++, species, ...childTarget, energy: parent.energy, activeFrom: state.step + 1 };
+    state.animals.push(child);
+    emit?.({ type: 'birth', parentId: parent.id, animal: { ...child }, parentBefore, parentAfter: { ...parent }, sourceCell: cellIndex(parentBefore, config.width) });
+    if (species === 'herbivore') {
+      if (parent.column !== parentBefore.column || parent.row !== parentBefore.row) consumeGrass(state, config, parent);
+      consumeGrass(state, config, child);
+    }
+  }
 }
 
-export function hunt(state: State, config: Config, random: Random): void {
+export function hunt(state: State, config: Config, random: Random, emit?: Emit): void {
   const preyByCell = new Map(state.animals.filter(a => a.species === 'herbivore').map(a => [cellIndex(a, config.width), a]));
   const proposals = new Map<number, Animal[]>();
   for (const predator of active(state, 'carnivore')) {
@@ -114,7 +157,9 @@ export function hunt(state: State, config: Config, random: Random): void {
   const eaten = new Set<number>();
   resolve(proposals, random, (predator, target) => {
     const prey = preyByCell.get(target)!;
-    predator.energy = Math.min(config.carnivore.maxEnergy, predator.energy + prey.energy * config.preyEfficiency);
+    const energyAfter = Math.min(config.carnivore.maxEnergy, predator.energy + prey.energy * config.preyEfficiency);
+    emit?.({ type: 'hunt', animal: { ...predator }, prey: { ...prey }, energyAfter });
+    predator.energy = energyAfter;
     predator.column = prey.column;
     predator.row = prey.row;
     eaten.add(prey.id);
@@ -122,22 +167,49 @@ export function hunt(state: State, config: Config, random: Random): void {
   state.animals = state.animals.filter(a => !eaten.has(a.id));
 }
 
-export function herbivorePhase(state: State, config: Config, random: Random): void {
-  moveHerbivores(state, config, random);
-  feedHerbivores(state, config);
-  divide(state, config, 'herbivore', random);
+export function herbivorePhase(state: State, config: Config, random: Random, emit?: Emit): void {
+  moveHerbivores(state, config, random, emit);
+  feedHerbivores(state, config, emit);
+  divide(state, config, 'herbivore', random, emit);
 }
-export function carnivorePhase(state: State, config: Config, random: Random): void {
-  hunt(state, config, random);
-  drainEnergy(state, config, 'carnivore');
-  divide(state, config, 'carnivore', random);
+export function carnivorePhase(state: State, config: Config, random: Random, emit?: Emit): void {
+  hunt(state, config, random, emit);
+  finishCarnivores(state, config, random, emit);
+}
+
+function finishCarnivores(state: State, config: Config, random: Random, emit?: Emit): void {
+  drainEnergy(state, config, 'carnivore', emit);
+  divide(state, config, 'carnivore', random, emit);
+}
+
+type Capture = (phase: 'grown' | 'fed' | 'herbivores' | 'hunted' | 'drained', state: State) => void;
+function evolve(state: State, config: Config, random: Random, emit?: Emit, capture?: Capture): State {
+  const next = copyState(state);
+  next.step++;
+  growGrass(next, config);
+  capture?.('grown', next);
+  moveHerbivores(next, config, random, emit);
+  feedHerbivores(next, config, emit);
+  capture?.('fed', next);
+  divide(next, config, 'herbivore', random, emit);
+  capture?.('herbivores', next);
+  hunt(next, config, random, emit);
+  capture?.('hunted', next);
+  drainEnergy(next, config, 'carnivore', emit);
+  capture?.('drained', next);
+  divide(next, config, 'carnivore', random, emit);
+  return next;
 }
 
 /** A pure transition: input state and configuration are left untouched. */
 export function step(state: State, config: Config, random: Random = Math.random): State {
-  const next: State = { ...state, step: state.step + 1, grass: [...state.grass], animals: state.animals.map(a => ({ ...a })) };
-  growGrass(next, config);
-  herbivorePhase(next, config, random);
-  carnivorePhase(next, config, random);
-  return next;
+  return evolve(state, config, random);
+}
+
+/** Same calculation and random draws as step; phase snapshots and event payloads are independent copies. */
+export function transition(state: State, config: Config, random: Random = Math.random): Transition {
+  const snapshots = {} as Pick<Transition, 'grown' | 'fed' | 'herbivores' | 'hunted' | 'drained'>;
+  const events: SimulationEvent[] = [];
+  const after = evolve(state, config, random, event => events.push(event), (phase, current) => { snapshots[phase] = copyState(current); });
+  return { before: copyState(state), ...snapshots, after, events };
 }
