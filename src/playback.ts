@@ -14,7 +14,8 @@ export class Playback {
   private accumulator = 0;
   private multiplier: number;
   constructor(state: State, private readonly config: Config, private readonly random: Random = Math.random,
-    private readonly compute: (state: State) => State = state => tick(state, config, random)) {
+    private readonly compute: (state: State) => State = state => tick(state, config, random),
+    private readonly onTick?: (state: State) => void) {
     this.current = state; this.multiplier = config.speedMultiplier;
   }
   get state(): State { return this.current; }
@@ -23,6 +24,10 @@ export class Playback {
   get speedMultiplier(): number { return this.multiplier; }
   get pendingTicks(): number { return this.accumulator; }
   get frame(): AnimationFrame { return sampleAnimation(this.current, this.config); }
+  private advance(): void {
+    this.current = this.compute(this.current);
+    this.onTick?.(this.current);
+  }
   tick(now: number): void {
     const delta = this.lastTime === undefined ? 0 : Math.max(0, Math.min(maxFrameDeltaMs, now - this.lastTime));
     this.lastTime = now;
@@ -30,7 +35,7 @@ export class Playback {
     this.accumulator = Math.min(maxPendingTicks, this.accumulator + delta * this.multiplier * ticksPerSecond / 1000);
     let count = 0;
     while (this.accumulator >= 1 - 1e-10 && count < maxTicksPerFrame) {
-      this.current = this.compute(this.current);
+      this.advance();
       this.accumulator = Math.max(0, this.accumulator - 1); count++;
     }
   }
@@ -44,7 +49,7 @@ export class Playback {
   }
   singleStep(now: number): boolean {
     if (!this.paused) return false;
-    this.current = this.compute(this.current); this.lastTime = now;
+    this.advance(); this.lastTime = now;
     return true;
   }
   reset(state: State, now: number): void {

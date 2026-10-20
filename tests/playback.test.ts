@@ -2,9 +2,26 @@
 import { Playback, maxTicksPerFrame, maxPendingTicks } from '../src/playback';
 import { initialize, tick } from '../src/simulation';
 import { defaultConfig } from '../src/config';
+import { History } from '../src/history';
 import { advance, fastConfig, resident, seededRandom, testConfig, testState } from './fixtures';
 
 describe('fixed tick playback', () => {
+  it('records every completed tick, including ticks settled on speed changes and pause', () => {
+    const history = new History(), state = testState([]);
+    history.reset(state);
+    const playback = new Playback(state, { ...testConfig, speedMultiplier: 1 }, undefined, undefined, state => history.record(state));
+    playback.tick(0); playback.tick(100);
+    expect(history.values().map(value => value.tick)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    playback.setSpeedMultiplier(2, 200);
+    expect(history.latest?.tick).toBe(12);
+    playback.toggle(300);
+    expect(history.latest?.tick).toBe(24);
+    playback.tick(1000); playback.setSpeedMultiplier(8, 2000);
+    expect(history.size).toBe(25);
+    playback.singleStep(3000);
+    expect(history.latest?.tick).toBe(25); expect(history.size).toBe(26);
+    expect(playback.running).toBe(false);
+  });
   it.each([0.25, 1, 2, 8])('runs 60 ticks per active simulated second at %s×', speedMultiplier => {
     const config = { ...testConfig, speedMultiplier };
     const playback = new Playback(testState([]), config);
@@ -76,13 +93,16 @@ describe('fixed tick playback', () => {
   });
   it('matches the same seeded world after identical tick counts with different frame sequences', () => {
     const initial = initialize(defaultConfig, seededRandom(8));
-    const a = new Playback(initial, { ...defaultConfig, speedMultiplier: 1 }, seededRandom(9));
-    const b = new Playback(initial, { ...defaultConfig, speedMultiplier: 8 }, seededRandom(9));
+    const historyA = new History(), historyB = new History();
+    historyA.reset(initial); historyB.reset(initial);
+    const a = new Playback(initial, { ...defaultConfig, speedMultiplier: 1 }, seededRandom(9), undefined, state => historyA.record(state));
+    const b = new Playback(initial, { ...defaultConfig, speedMultiplier: 8 }, seededRandom(9), undefined, state => historyB.record(state));
     a.tick(0); b.tick(0);
     for (let i = 1; i <= 1200; i++) a.tick(i * 1000 / 60);
     for (let i = 1; i <= 300; i++) b.tick(i * 1000 / 120);
     expect(a.state.tick).toBe(1200); expect(b.state.tick).toBe(1200);
     expect(a.state).toEqual(b.state);
+    expect(historyA.values()).toEqual(historyB.values());
     expect(a.state).toEqual(advance(initial, defaultConfig, 1200, seededRandom(9)));
   });
 });

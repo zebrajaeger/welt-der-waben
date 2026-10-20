@@ -52,9 +52,16 @@ The table uses the labels shown in the German interface.
 | **Neustart** | Start a new random world with the active settings; keep the pause state and current speed. |
 | **Tempo** | Change playback immediately, from 0.25× to 8×. At 1×, 60 ticks pass per real second; at 2×, 120. |
 | **Einstellungen** | Expand or collapse the parameter panel. |
+| **Verlauf** | Expand or collapse the population and energy history chart. |
 | **GitHub icon** | Next to “Ein kleines Ökosystem”, open the source repository in a new tab. Also accessible with Tab and Enter. |
 
 The status line shows the tick, elapsed simulation time and population of each species. Resizing the window changes only the projection. Different aspect ratios leave some empty space around the centered grid.
+
+The **Verlauf** panel records the last 300 simulation seconds, including while closed. Choose any combination of carnivore count, herbivore count, and total energy in carnivores, herbivores or grass. Counts use the left axis; energy uses the right. Current selected values also appear as text below the chart. Both population counts are selected initially.
+
+**Darstellung** switches between **Wandernde Kurven** (the current time stays on the right while curves move left; the default) and **Umlaufender Cursor** (the cursor sweeps right, returns to the left and overwrites older curves). The previous sweep remains dimmed to the right of the cursor, with its own simulation time labels. **Zeitspanne** selects 10, 30, 60, 120 or 300 simulation seconds per chart width, defaulting to 60. A shorter span means faster horizontal movement without changing simulation speed.
+
+Pause freezes the history and cursor; single step adds exactly one tick. Restart or applying settings clears the history while retaining chart choices. Saving or importing settings into the draft does not clear it. Reload begins a new history with the chart defaults; history and chart choices are not saved or included in settings JSON.
 
 ## Simulation rules
 

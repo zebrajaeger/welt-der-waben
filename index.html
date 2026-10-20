@@ -28,6 +28,22 @@
           <p id="settings-message" role="status" tabindex="-1"></p>
         </form>
       </details>
+      <details id="history" class="history">
+        <summary>Verlauf</summary>
+        <div class="history-body">
+          <fieldset class="history-metrics"><legend>Messreihen</legend><div id="history-metrics"></div></fieldset>
+          <div class="history-controls">
+            <div><label for="history-mode">Darstellung</label><select id="history-mode"><option value="scroll">Wandernde Kurven</option><option value="sweep">Umlaufender Cursor</option></select></div>
+            <div><label for="history-span">Zeitspanne</label><select id="history-span" aria-describedby="history-help"></select></div>
+          </div>
+          <p id="history-help">Simulationssekunden pro Diagrammbreite. Kürzere Zeitspanne = schnellere Bewegung. Anzahl links, Energie rechts.</p>
+          <p id="history-sweep" hidden>Der Cursor überschreibt den älteren Verlauf. Rechts vom Cursor bleibt der vorige Umlauf blasser sichtbar; die Zeitangaben gehören zum jeweiligen Abschnitt.</p>
+          <p id="history-empty" hidden>Bitte mindestens eine Messreihe auswählen.</p>
+          <div class="history-chart"><canvas id="history-canvas" role="img" aria-label="Zeitlicher Verlauf der ausgewählten Populationen und Energiesummen" aria-describedby="history-time history-range history-values history-sweep"></canvas></div>
+          <div class="history-readout"><p id="history-time"></p><p id="history-range"></p></div>
+          <dl id="history-values" aria-label="Aktuelle Messwerte"></dl>
+        </div>
+      </details>
       <p id="settings-notice" role="status"></p>
       <p id="status" aria-live="polite"></p>
       <section class="field-container" aria-label="Simulationsfeld"><canvas id="field" aria-label="Wabenfeld mit Gras, Grasfressern und Karnivoren"></canvas></section>

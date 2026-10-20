@@ -52,9 +52,16 @@ Die Tabelle verwendet die Beschriftungen der deutschen Oberfläche.
 | **Neustart** | Eine neue zufällige Welt mit den aktiven Einstellungen beginnen; Pausenmodus und aktuelles Tempo bleiben erhalten. |
 | **Tempo** | Die Wiedergabe sofort zwischen 0,25× und 8× ändern. Bei 1× verstreichen 60 Ticks pro Realzeitsekunde, bei 2× sind es 120. |
 | **Einstellungen** | Die Parameterbox auf- oder einklappen. |
+| **Verlauf** | Das Diagramm für Populationen und Energiesummen auf- oder einklappen. |
 | **GitHub-Symbol** | Neben „Ein kleines Ökosystem“ den Quellcode in einem neuen Tab öffnen. Auch mit Tab und Enter bedienbar. |
 
 Die Statuszeile zeigt Tickzahl, vergangene Simulationszeit und Populationen beider Arten. Eine Fensteränderung verändert nur die Projektion. Bei unterschiedlichem Seitenverhältnis bleiben Restflächen um das zentrierte Raster.
+
+Die Box **Verlauf** zeichnet die letzten 300 Simulationssekunden auf, auch im geschlossenen Zustand. Beliebig kombinierbar sind Anzahl Karnivoren, Anzahl Grasfresser und die Energiesummen von Karnivoren, Grasfressern und Gras. Anzahlen verwenden die linke Achse, Energien die rechte. Die aktuellen ausgewählten Werte stehen zusätzlich als Text unter dem Diagramm. Anfangs sind beide Tierzahlen ausgewählt.
+
+**Darstellung** wechselt zwischen **Wandernde Kurven** (der aktuelle Zeitpunkt bleibt rechts, die Kurven wandern nach links; Standard) und **Umlaufender Cursor** (der Cursor läuft nach rechts, springt zurück und überschreibt ältere Kurven). Rechts vom Cursor bleibt der vorige Umlauf blasser sichtbar, mit seinen eigenen Simulationszeitangaben. **Zeitspanne** wählt 10, 30, 60, 120 oder 300 Simulationssekunden pro Diagrammbreite, standardmäßig 60. Eine kürzere Zeitspanne bedeutet schnellere horizontale Bewegung, ohne das Simulationstempo zu ändern.
+
+Pause hält Verlauf und Cursor an; Einzelschritt ergänzt genau einen Tick. Neustart oder Übernehmen von Einstellungen leert den Verlauf und erhält die Diagrammauswahl. Speichern oder Import ins Formular leert ihn nicht. Neuladen beginnt einen neuen Verlauf mit den Diagrammstandards; Historie und Diagrammauswahl werden weder gespeichert noch mit den Einstellungen als JSON übertragen.
 
 ## Simulationsregeln
 

@@ -3,9 +3,11 @@ import { ticksPerSecond } from './config';
 import { copyConfig } from './settings';
 import { loadSettings } from './settings-storage';
 import { createSettingsPanel } from './settings-panel';
-import { initialize } from './simulation';
+import { initialize, type State } from './simulation';
 import { drawLegend, layout, render } from './render';
 import { Playback } from './playback';
+import { History } from './history';
+import { createHistoryPanel } from './history-panel';
 
 const status = document.querySelector<HTMLElement>('#status')!;
 const canvas = document.querySelector<HTMLCanvasElement>('#field')!;
@@ -19,7 +21,11 @@ try {
   const loaded = loadSettings();
   let activeConfig = copyConfig(loaded.config);
   if (!context) throw new Error('Dieser Browser unterstützt Canvas 2D nicht.');
-  let playback = new Playback(initialize(activeConfig), activeConfig);
+  const history = new History();
+  const initial = initialize(activeConfig);
+  history.reset(initial);
+  const record = (state: State) => history.record(state);
+  let playback = new Playback(initial, activeConfig, undefined, undefined, record);
   const speedFormat = new Intl.NumberFormat('de-DE', { maximumSignificantDigits: 15 });
   const updateSpeed = () => {
     speed.replaceChildren();
@@ -30,6 +36,7 @@ try {
   };
   updateSpeed();
   const listeners = new AbortController();
+  const historyPanel = createHistoryPanel(history, listeners.signal);
   let frameRequest: number | undefined;
 
   const draw = () => {
@@ -54,6 +61,7 @@ try {
     toggle.textContent = playback.running ? 'Pause' : 'Weiter';
     toggle.setAttribute('aria-pressed', String(playback.running));
     singleStep.disabled = !playback.canSingleStep;
+    historyPanel.refresh();
   };
   const animate = (now: number) => {
     frameRequest = undefined;
@@ -68,15 +76,20 @@ try {
   const settings = createSettingsPanel(loaded, () => activeConfig, config => {
     const now = performance.now(), running = playback.running;
     const nextConfig = copyConfig(config);
-    const nextPlayback = new Playback(initialize(nextConfig), nextConfig);
+    const nextInitial = initialize(nextConfig);
+    const nextPlayback = new Playback(nextInitial, nextConfig, undefined, undefined, record);
     if (!running) nextPlayback.toggle(now);
     else nextPlayback.tick(now);
     activeConfig = nextConfig; playback = nextPlayback;
+    history.reset(nextInitial);
     updateSpeed(); draw(); schedule();
   }, listeners.signal);
   toggle.addEventListener('click', () => { playback.toggle(performance.now()); draw(); schedule(); }, { signal: listeners.signal });
   singleStep.addEventListener('click', () => { playback.singleStep(performance.now()); draw(); schedule(); }, { signal: listeners.signal });
-  reset.addEventListener('click', () => { playback.reset(initialize(activeConfig), performance.now()); draw(); schedule(); }, { signal: listeners.signal });
+  reset.addEventListener('click', () => {
+    const state = initialize(activeConfig);
+    playback.reset(state, performance.now()); history.reset(state); draw(); schedule();
+  }, { signal: listeners.signal });
   speed.addEventListener('change', () => {
     playback.setSpeedMultiplier(Number(speed.value), performance.now());
     activeConfig = { ...activeConfig, speedMultiplier: playback.speedMultiplier };
