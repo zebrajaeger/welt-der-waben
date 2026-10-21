@@ -18,6 +18,34 @@ export interface Projection {
   readonly sections: readonly TimeSection[];
 }
 
+export function historyPlot(width: number, height: number) {
+  return { left: 48, top: 26, width: Math.max(1, width - 96), height: Math.max(1, height - 66) };
+}
+
+/** Resolve the time under a fixed horizontal position against the current viewport. */
+export function historySampleAt(samples: readonly HistorySample[], mode: ChartMode, seconds: number, x: number): HistorySample | undefined {
+  const latest = samples.at(-1);
+  if (!latest || x < 0 || x > 1) return;
+  const spanTicks = seconds * ticksPerSecond;
+  let target = latest.tick - spanTicks + x * spanTicks;
+  if (mode === 'sweep') {
+    const cycle = Math.floor(latest.tick / spanTicks) * spanTicks;
+    if (x <= (latest.tick - cycle) / spanTicks) target = cycle + x * spanTicks;
+    else {
+      if (cycle === 0) return;
+      target = Math.min(cycle - 1, cycle - spanTicks + x * spanTicks);
+    }
+  }
+  if (target < samples[0].tick || target > latest.tick) return;
+  const tick = Math.round(target);
+  let left = 0, right = samples.length - 1;
+  while (left <= right) {
+    const middle = (left + right) >>> 1, sample = samples[middle];
+    if (sample.tick === tick) return sample;
+    if (sample.tick < tick) left = middle + 1; else right = middle - 1;
+  }
+}
+
 /** Each sweep gets its own path: never join across the cursor or a wrap. */
 export function projectHistory(samples: readonly HistorySample[], mode: ChartMode, seconds: number): Projection {
   const now = (samples.at(-1)?.tick ?? 0) / ticksPerSecond;
@@ -69,13 +97,13 @@ export function compactPoints(points: readonly ChartPoint[], metric: Metric, wid
 }
 
 const numberLabel = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1, notation: 'compact' });
-const timeLabel = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 });
+const timeLabel = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 export function drawHistory(context: CanvasRenderingContext2D, width: number, height: number,
   samples: readonly HistorySample[], mode: ChartMode, seconds: number, selected: readonly Metric[]): void {
   context.clearRect(0, 0, width, height);
   const projection = projectHistory(samples, mode, seconds), scales = chartScales(projection, selected);
-  const left = 48, top = 26, plotWidth = Math.max(1, width - 96), plotHeight = Math.max(1, height - 66);
+  const { left, top, width: plotWidth, height: plotHeight } = historyPlot(width, height);
   const bottom = top + plotHeight;
   context.font = '11px system-ui, sans-serif'; context.lineWidth = 1; context.setLineDash([]);
   for (let i = 0; i <= 4; i++) {
@@ -93,6 +121,8 @@ export function drawHistory(context: CanvasRenderingContext2D, width: number, he
   if (scales.count !== undefined) context.fillText('Anzahl', left, 13);
   context.textAlign = 'right';
   if (scales.energy !== undefined) context.fillText('Energie', left + plotWidth, 13);
+  // Right alignment anchors the decimal position even when the integer gains a digit.
+  context.font = '11px ui-monospace, Consolas, monospace';
   for (let i = 0; i <= 4; i++) {
     const x = i / 4;
     // Current section wins at the cursor; the right-hand section belongs to the previous sweep.
@@ -100,9 +130,10 @@ export function drawHistory(context: CanvasRenderingContext2D, width: number, he
     if (!section) continue;
     const fraction = section.to === section.from ? 0 : (x - section.from) / (section.to - section.from);
     const time = section.start + fraction * (section.end - section.start);
-    context.fillStyle = section.previous ? '#9cb29c' : '#e8f1df'; context.textAlign = 'center';
+    context.fillStyle = section.previous ? '#9cb29c' : '#e8f1df'; context.textAlign = 'right';
     context.fillText(timeLabel.format(time), left + x * plotWidth, bottom + 17);
   }
+  context.font = '11px system-ui, sans-serif';
   context.fillStyle = '#9cb29c'; context.textAlign = 'center';
   context.fillText('Simulationszeit (s)', left + plotWidth / 2, height - 3);
   context.save(); context.beginPath(); context.rect(left - 2, top - 2, plotWidth + 4, plotHeight + 4); context.clip();

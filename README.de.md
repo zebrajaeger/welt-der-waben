@@ -57,7 +57,13 @@ Die Tabelle verwendet die Beschriftungen der deutschen Oberfläche.
 
 Die Statuszeile zeigt Tickzahl, vergangene Simulationszeit und Populationen beider Arten. Eine Fensteränderung verändert nur die Projektion. Bei unterschiedlichem Seitenverhältnis bleiben Restflächen um das zentrierte Raster.
 
-Die Box **Verlauf** zeichnet die letzten 300 Simulationssekunden auf, auch im geschlossenen Zustand. Beliebig kombinierbar sind Anzahl Karnivoren, Anzahl Grasfresser und die Energiesummen von Karnivoren, Grasfressern und Gras. Anzahlen verwenden die linke Achse, Energien die rechte. Die aktuellen ausgewählten Werte stehen zusätzlich als Text unter dem Diagramm. Anfangs sind beide Tierzahlen ausgewählt.
+Die Box **Verlauf** zeichnet die letzten 300 Simulationssekunden auf, auch im geschlossenen Zustand. Beliebig kombinierbar sind Anzahl Karnivoren, Anzahl Grasfresser und die Energiesummen von Karnivoren, Grasfressern und Gras. Anzahlen verwenden die linke Achse, Energien die rechte. Anfangs sind beide Tierzahlen ausgewählt.
+
+Mit der Maus über der Zeichenfläche zeigt ein schwebendes Tooltip die Zeit und alle fünf Werte des nächstgelegenen aufgezeichneten Ticks an dieser horizontalen Position, auch für ausgeblendete Kurven. Es aktualisiert sich bei stillstehender Maus, während die Kurven weiterwandern, und berücksichtigt beide Umläufe beiderseits des laufenden Cursors. In noch leeren Zeitbereichen erscheint kein Tooltip. Per Tastatur: Diagramm fokussieren, Pfeiltasten oder Pos1/Ende verwenden; Escape blendet die Werte aus.
+
+Aktuelle Energie- und Zeitangaben haben zwei Nachkommastellen; Tierzahlen und Ticks bleiben ganzzahlig. Feste Zahlenfelder halten benachbarte Beschriftungen bei Stellenwechseln an ihrem Platz. Sehr lange Werte erscheinen im selben Platz in wissenschaftlicher Schreibweise; der vollständige Wert steht beim Überfahren mit der Maus sowie für Screenreader bereit.
+
+Die X-Achse zeigt immer eine Nachkommastelle mit fester Ausrichtung. **Details** öffnet Tickzahl, Zeitbereich und Erklärtexte; dieser Bereich bleibt anfangs geschlossen, damit mehr Platz für die Simulation bleibt.
 
 **Darstellung** wechselt zwischen **Wandernde Kurven** (der aktuelle Zeitpunkt bleibt rechts, die Kurven wandern nach links; Standard) und **Umlaufender Cursor** (der Cursor läuft nach rechts, springt zurück und überschreibt ältere Kurven). Rechts vom Cursor bleibt der vorige Umlauf blasser sichtbar, mit seinen eigenen Simulationszeitangaben. **Zeitspanne** wählt 10, 30, 60, 120 oder 300 Simulationssekunden pro Diagrammbreite, standardmäßig 60. Eine kürzere Zeitspanne bedeutet schnellere horizontale Bewegung, ohne das Simulationstempo zu ändern.
 
@@ -174,6 +180,8 @@ Dieses vollständige Beispiel enthält die aktuellen Standardwerte. Version und 
 ```
 
 ## Entwicklung
+
+`node scripts/check-history-layout.mjs` prüft Zahlenfeldpositionen bei Stellenwechseln deterministisch im Browser. Der Check startet einen eigenen lokalen Vite-Server und verwendet den installierten Playwright-Chromium-Browser.
 
 | Befehl | Zweck |
 | --- | --- |

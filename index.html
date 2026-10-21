@@ -36,12 +36,24 @@
             <div><label for="history-mode">Darstellung</label><select id="history-mode"><option value="scroll">Wandernde Kurven</option><option value="sweep">Umlaufender Cursor</option></select></div>
             <div><label for="history-span">Zeitspanne</label><select id="history-span" aria-describedby="history-help"></select></div>
           </div>
-          <p id="history-help">Simulationssekunden pro Diagrammbreite. Kürzere Zeitspanne = schnellere Bewegung. Anzahl links, Energie rechts.</p>
-          <p id="history-sweep" hidden>Der Cursor überschreibt den älteren Verlauf. Rechts vom Cursor bleibt der vorige Umlauf blasser sichtbar; die Zeitangaben gehören zum jeweiligen Abschnitt.</p>
           <p id="history-empty" hidden>Bitte mindestens eine Messreihe auswählen.</p>
-          <div class="history-chart"><canvas id="history-canvas" role="img" aria-label="Zeitlicher Verlauf der ausgewählten Populationen und Energiesummen" aria-describedby="history-time history-range history-values history-sweep"></canvas></div>
-          <div class="history-readout"><p id="history-time"></p><p id="history-range"></p></div>
-          <dl id="history-values" aria-label="Aktuelle Messwerte"></dl>
+          <div class="history-chart"><canvas id="history-canvas" role="img" tabindex="0" aria-label="Zeitlicher Verlauf; Werte mit Maus oder Pfeiltasten erkunden" aria-describedby="history-time history-range history-sweep history-tooltip"></canvas></div>
+          <details class="history-extra">
+            <summary>Details</summary>
+            <p id="history-help">Simulationssekunden pro Diagrammbreite. Kürzere Zeitspanne = schnellere Bewegung. Anzahl links, Energie rechts.</p>
+            <p id="history-sweep" hidden>Der Cursor überschreibt den älteren Verlauf. Rechts vom Cursor bleibt der vorige Umlauf blasser sichtbar; die Zeitangaben gehören zum jeweiligen Abschnitt.</p>
+          <div class="history-readout">
+            <div id="history-time">
+              <div class="history-readout-item"><span>Tick</span><span id="history-tick" class="history-number history-number--time"></span></div>
+              <div class="history-readout-item"><span>Zeit</span><span id="history-seconds" class="history-number history-number--time"></span><span>s</span></div>
+            </div>
+            <div id="history-range">
+              <span>Aufgezeichneter Verlauf:</span>
+              <div class="history-range-values"><span id="history-range-start" class="history-number history-number--time"></span><span>–</span><span id="history-range-end" class="history-number history-number--time"></span><span>s</span></div>
+              <span>(max. 300 s)</span>
+            </div>
+          </div>
+          </details>
         </div>
       </details>
       <p id="settings-notice" role="status"></p>

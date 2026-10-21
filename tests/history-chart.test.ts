@@ -1,11 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { chartScales, compactPoints, projectHistory, timeSpans } from '../src/history-chart';
+import { chartScales, compactPoints, historySampleAt, projectHistory, timeSpans } from '../src/history-chart';
 import { measure } from '../src/history';
 import { testState } from './fixtures';
 
 const samples = (lastTick: number) => Array.from({ length: lastTick + 1 }, (_, tick) => ({ ...measure(testState([])), tick }));
 
 describe('history projection', () => {
+  it('updates the inspected tick at a stationary position when curves scroll', () => {
+    expect(historySampleAt(samples(900), 'scroll', 10, 0.5)?.tick).toBe(600);
+    expect(historySampleAt(samples(960), 'scroll', 10, 0.5)?.tick).toBe(660);
+    expect(historySampleAt(samples(120), 'scroll', 10, 0.5)).toBeUndefined();
+  });
+  it('inspects the correct sweep on either side of the cursor, including wrap boundaries', () => {
+    const data = samples(750);
+    expect(historySampleAt(data, 'sweep', 10, 0.125)?.tick).toBe(675);
+    expect(historySampleAt(data, 'sweep', 10, 0.25)?.tick).toBe(750);
+    expect(historySampleAt(data, 'sweep', 10, 0.75)?.tick).toBe(450);
+    expect(historySampleAt(data, 'sweep', 10, 1)?.tick).toBe(599);
+    expect(historySampleAt(samples(600), 'sweep', 10, 0)?.tick).toBe(600);
+    expect(historySampleAt(samples(120), 'sweep', 10, 0.5)).toBeUndefined();
+    expect(historySampleAt(data, 'scroll', 10, -0.1)).toBeUndefined();
+    expect(historySampleAt(data, 'scroll', 10, 1.1)).toBeUndefined();
+    expect(historySampleAt(data.slice(500), 'sweep', 10, 0.75)).toBeUndefined();
+  });
   it('anchors now at the right edge and leaves time before the run blank', () => {
     const data = samples(120), projection = projectHistory(data, 'scroll', 10);
     expect(projection.cursor).toBe(1);

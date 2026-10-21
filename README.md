@@ -57,7 +57,13 @@ The table uses the labels shown in the German interface.
 
 The status line shows the tick, elapsed simulation time and population of each species. Resizing the window changes only the projection. Different aspect ratios leave some empty space around the centered grid.
 
-The **Verlauf** panel records the last 300 simulation seconds, including while closed. Choose any combination of carnivore count, herbivore count, and total energy in carnivores, herbivores or grass. Counts use the left axis; energy uses the right. Current selected values also appear as text below the chart. Both population counts are selected initially.
+The **Verlauf** panel records the last 300 simulation seconds, including while closed. Choose any combination of carnivore count, herbivore count, and total energy in carnivores, herbivores or grass. Counts use the left axis; energy uses the right. Both population counts are selected initially.
+
+Hover over the plot to inspect the nearest recorded tick at that horizontal position. The floating tooltip shows its time and all five values, including hidden series. It updates under a stationary pointer while curves scroll, and respects both sweeps on either side of the moving cursor. Empty history areas show no tooltip. Keyboard: focus the chart, use arrow keys or Home/End, and Escape to dismiss.
+
+Current energy and time readouts use two decimal places; counts and ticks remain integers. Fixed number fields keep neighboring labels in place as digits change. Very long values use scientific notation within the same space; hover over the number for its full value, which is also available to screen readers.
+
+The X-axis always shows one decimal place with a fixed alignment. **Details** reveals tick, time range and explanatory text; these stay collapsed initially to leave more room for the simulation.
 
 **Darstellung** switches between **Wandernde Kurven** (the current time stays on the right while curves move left; the default) and **Umlaufender Cursor** (the cursor sweeps right, returns to the left and overwrites older curves). The previous sweep remains dimmed to the right of the cursor, with its own simulation time labels. **Zeitspanne** selects 10, 30, 60, 120 or 300 simulation seconds per chart width, defaulting to 60. A shorter span means faster horizontal movement without changing simulation speed.
 
@@ -174,6 +180,8 @@ This complete example uses the current defaults. Keep the version and all parame
 ```
 
 ## Development
+
+Run `node scripts/check-history-layout.mjs` for a deterministic browser check of number-field positions across digit changes. It starts its own local Vite server and uses the installed Playwright Chromium browser.
 
 | Command | Purpose |
 | --- | --- |
