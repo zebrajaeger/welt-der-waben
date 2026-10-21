@@ -4,7 +4,7 @@
 
 A small ecosystem on a hexagonal grid: grass grows, herbivores feed and divide, and carnivores follow their prey. Watch energy flow through each encounter, one animated step at a time.
 
-Built with TypeScript, Canvas 2D and Vite. The interface uses your browser’s preferred supported language: English or German, with English as the default and fallback. Translations live in separate [i18next language files](docs/i18n.md).
+Built with TypeScript, Canvas 2D and Vite. The interface supports 30 languages, selected from browser preferences, with English as the default and fallback. Arabic and Hebrew use right-to-left text; simplified and traditional Chinese have separate catalogs. Translations live in separate [i18next language files](docs/i18n.md), which document the full language package and how to add translations.
 
 **Play online:** [Open Welt der Waben](https://zebrajaeger.github.io/welt-der-waben/). Hosted on GitHub Pages and updated automatically after successful checks on `main`. See the [deployment guide](docs/deployment.md) for details.
 
@@ -47,7 +47,7 @@ Open the address printed by Vite. If you already have the repository, run the la
 
 Use the **globe button at the top right** to select a language. Flags and each language's own name make the options recognizable in any interface language. Your choice takes effect immediately, is saved in this browser and overrides browser language preferences on later visits. Switching preserves the current simulation, chart and settings draft; if storage is blocked, the choice still works for this visit. Playback controls remain right-aligned beside the heading, leaving space for the language button.
 
-The table uses English interface labels. German browsers display their German equivalents.
+The table uses English interface labels. Other supported languages display their translated equivalents. The language list scrolls internally; Home/End and arrow keys reveal each focused choice.
 
 | Control | What it does |
 | --- | --- |

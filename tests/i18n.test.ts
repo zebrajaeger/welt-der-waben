@@ -4,6 +4,27 @@ import { settingFields } from '../src/settings';
 import { metrics } from '../src/history-chart';
 
 describe('localization', () => {
+  it('isolates RTL interpolations while keeping plain translations and tooltip markers intact', () => {
+    const i18n = createLocalization(['ar']);
+    expect(i18n.direction).toBe('rtl');
+    expect(i18n.t('errors.minimum', { field: 'JSON', min: 0 })).toContain('\u2068JSON\u2069');
+    expect(i18n.t('errors.minimum', { field: 'JSON', min: 0 })).toContain('\u20680\u2069');
+    expect(i18n.t('tooltip.position', { seconds: '\u0000seconds\u0000', tick: '\u0000tick\u0000' })).not.toContain('\u2068');
+    expect(i18n.t('settings.title')).toBe(catalogs.ar['settings.title']);
+    i18n.setLanguage('fr'); expect(i18n.direction).toBe('ltr');
+    expect(i18n.t('errors.minimum', { field: 'JSON', min: 0 })).not.toContain('\u2068');
+  });
+  it.each([
+    ['zh', 'zh-Hans'], ['zh-CN', 'zh-Hans'], ['zh-SG', 'zh-Hans'], ['zh-TW', 'zh-Hant'],
+    ['zh-HK', 'zh-Hant'], ['zh-MO', 'zh-Hant'], ['zh-Hans-TW', 'zh-Hans'], ['zh-Hant-CN', 'zh-Hant'],
+    ['no', 'nb'], ['no-NO', 'nb'], ['nb-NO', 'nb'], ['nn-NO', 'en'],
+  ])('resolves script/alias %s as %s', (preference, expected) => {
+    expect(selectLanguage([preference], undefined, ['en', 'de', 'nb', 'zh-Hans', 'zh-Hant'])).toBe(expected);
+  });
+  it('matches each preference completely before moving to the next', () => {
+    expect(selectLanguage(['zh-TW', 'de'], undefined, ['en', 'de', 'zh-Hant'])).toBe('zh-Hant');
+    expect(selectLanguage(['de-CH', 'zh-Hant'], undefined, ['en', 'de', 'zh-Hant'])).toBe('de');
+  });
   it('ships complete catalogs with matching placeholders and English reference keys', () => {
     const placeholders = (value: string) => [...value.matchAll(/{{\s*(\w+)\s*}}/g)].map(match => match[1]).sort();
     for (const catalog of Object.values(catalogs)) {

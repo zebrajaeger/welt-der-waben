@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import english from '../src/locales/en.json' with { type: 'json' };
 import german from '../src/locales/de.json' with { type: 'json' };
+import french from '../src/locales/fr.json' with { type: 'json' };
 
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 const field = (page: Page, path: string) => page.locator(`[name="${path}"]`);
@@ -25,7 +26,7 @@ test('production HTML supplies escaped English fallback from the catalog', async
 
 for (const [preferences, fallback, expected] of [
   [['de-CH'], 'de-CH', 'de'], [['en-GB'], 'en-GB', 'en'],
-  [['fr-FR', 'de-DE', 'en-US'], 'fr-FR', 'de'], [['fr-FR'], 'fr-FR', 'en'],
+  [['fr-FR', 'de-DE', 'en-US'], 'fr-FR', 'fr'], [['zz-ZZ'], 'zz-ZZ', 'en'],
   [[], 'de-DE', 'de'], [[], '', 'en'],
 ] as const) {
   test(`browser preferences ${preferences.join(',') || '(empty)'} / ${fallback || '(empty)'} select ${expected}`, async ({ page }) => {
@@ -35,7 +36,7 @@ for (const [preferences, fallback, expected] of [
     }, { preferences, fallback });
     await page.goto('./');
     await expect(page.locator('html')).toHaveAttribute('lang', expected);
-    await expect(page.locator('h1')).toHaveText((expected === 'de' ? german : english)['app.heading']);
+    await expect(page.locator('h1')).toHaveText((expected === 'de' ? german : expected === 'fr' ? french : english)['app.heading']);
   });
 }
 

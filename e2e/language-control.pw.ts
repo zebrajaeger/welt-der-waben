@@ -85,8 +85,9 @@ test('shows language autonyms and flags and supports keyboard, Escape and outsid
   await expect(english).toBeFocused(); await expect(english).toHaveAttribute('aria-pressed', 'true');
   await expect(german).toHaveAttribute('lang', 'de');
   expect(await choices.locator('img').evaluateAll(images => images.every(image => image.complete && image.naturalWidth > 0))).toBe(true);
-  await page.keyboard.press('End'); await expect(english).toBeFocused();
-  await page.keyboard.press('Home'); await expect(german).toBeFocused();
+  await page.keyboard.press('End'); await expect(choices.locator('button').last()).toBeFocused();
+  await page.keyboard.press('Home'); await expect(choices.locator('button').first()).toBeFocused();
+  await german.focus();
   await page.keyboard.press('Enter');
   await expect(choices).toBeHidden(); await expect(toggle).toBeFocused();
   await expect(toggle).toHaveAttribute('aria-label', 'Sprache wählen');

@@ -104,6 +104,7 @@ export function drawHistory(context: CanvasRenderingContext2D, width: number, he
   const numberLabel = (value: number) => i18n.number(value, { maximumFractionDigits: 1, notation: 'compact' });
   const timeLabel = (value: number) => i18n.number(value, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   context.clearRect(0, 0, width, height);
+  context.direction = 'ltr';
   const projection = projectHistory(samples, mode, seconds), scales = chartScales(projection, selected);
   const { left, top, width: plotWidth, height: plotHeight } = historyPlot(width, height);
   const bottom = top + plotHeight;
@@ -113,18 +114,20 @@ export function drawHistory(context: CanvasRenderingContext2D, width: number, he
     context.strokeStyle = '#30483a'; context.beginPath(); context.moveTo(left, y); context.lineTo(left + plotWidth, y); context.stroke();
     context.fillStyle = '#bdcdb8';
     if (scales.count !== undefined) {
-      context.textAlign = 'right'; context.fillText(numberLabel(scales.count * i / 4), left - 7, y + 4);
+      context.textAlign = 'right'; context.fillText(numberLabel(scales.count * i / 4), left - 7, y + 4, 38);
     }
     if (scales.energy !== undefined) {
-      context.textAlign = 'left'; context.fillText(numberLabel(scales.energy * i / 4), left + plotWidth + 7, y + 4);
+      context.textAlign = 'left'; context.fillText(numberLabel(scales.energy * i / 4), left + plotWidth + 7, y + 4, 38);
     }
   }
+  context.direction = i18n.direction;
   context.fillStyle = '#bdcdb8'; context.textAlign = 'left';
   if (scales.count !== undefined) context.fillText(i18n.t('history.count'), left, 13);
   context.textAlign = 'right';
   if (scales.energy !== undefined) context.fillText(i18n.t('history.energy'), left + plotWidth, 13);
   // Right alignment anchors the decimal position even when the integer gains a digit.
   context.font = '11px ui-monospace, Consolas, monospace';
+  context.direction = 'ltr';
   for (let i = 0; i <= 4; i++) {
     const x = i / 4;
     // Current section wins at the cursor; the right-hand section belongs to the previous sweep.
@@ -133,9 +136,10 @@ export function drawHistory(context: CanvasRenderingContext2D, width: number, he
     const fraction = section.to === section.from ? 0 : (x - section.from) / (section.to - section.from);
     const time = section.start + fraction * (section.end - section.start);
     context.fillStyle = section.previous ? '#9cb29c' : '#e8f1df'; context.textAlign = 'right';
-    context.fillText(timeLabel(time), left + x * plotWidth, bottom + 17);
+    context.fillText(timeLabel(time), left + x * plotWidth, bottom + 17, Math.max(24, plotWidth / 4));
   }
   context.font = '11px system-ui, sans-serif';
+  context.direction = i18n.direction;
   context.fillStyle = '#9cb29c'; context.textAlign = 'center';
   context.fillText(i18n.t('history.axisTime'), left + plotWidth / 2, height - 3);
   context.save(); context.beginPath(); context.rect(left - 2, top - 2, plotWidth + 4, plotHeight + 4); context.clip();

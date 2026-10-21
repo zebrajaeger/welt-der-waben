@@ -9,6 +9,7 @@ function createNumber(element: HTMLElement, kind: HistoryNumberKind, capacity: n
   const visible = document.createElement('span'), full = document.createElement('span');
   visible.className = 'history-number-text'; full.className = 'history-number-full';
   element.classList.add('history-number'); element.replaceChildren(visible, full);
+  element.dir = 'ltr';
   return (value: number) => {
     const formatted = formatHistoryNumber(value, kind, capacity, i18n.locale), shortened = formatted.text !== formatted.full;
     const unit = i18n.t(unitKey);

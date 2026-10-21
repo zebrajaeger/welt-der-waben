@@ -1,6 +1,14 @@
 :root { font-family: system-ui, sans-serif; color: #e8f1df; background: #101c1b; color-scheme: dark; }
 * { box-sizing: border-box; }
 body { margin: 0; }
+/* Physical controls and coordinates stay fixed when the surrounding text is RTL. */
+header, .controls, .language-control, .history-chart, .history-readout-item,
+.history-range-values, .history-tooltip dl > div, .energy-key { direction: ltr; }
+html[dir="rtl"] header > div:first-child { direction: rtl; }
+html[dir="rtl"] .source-link { right: auto; left: 0; }
+.settings input, select, .history-number { direction: ltr; unicode-bidi: isolate; }
+.history-tooltip dt, [data-i18n], #status, #settings-message { unicode-bidi: isolate; }
+html[dir="rtl"] .history-tooltip dt { text-align: right; }
 main { height: 100vh; height: 100dvh; padding: 16px 20px; display: flex; flex-direction: column; }
 main > * { flex-shrink: 0; min-width: 0; }
 header { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 14px 24px; }
@@ -11,6 +19,9 @@ header > div:first-child { grid-column: 1; grid-row: 1; width: fit-content; max-
 .language-control img { display: block; width: 24px; height: 16px; border-radius: 2px; object-fit: cover; }
 .language-choices { position: absolute; z-index: 110; top: calc(100% + 8px); right: 0; min-width: 170px; max-width: calc(100vw - 24px); padding: 6px; border: 1px solid #64846f; border-radius: 8px; background: #14251f; box-shadow: 0 5px 18px #0006; }
 .language-choices[hidden] { display: none; }
+.language-choices { overflow-y: auto; overscroll-behavior: contain; }
+.language-choices bdi { overflow-wrap: anywhere; min-width: 0; }
+.language-control img { flex-shrink: 0; }
 .language-choices button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; border-color: transparent; background: transparent; text-align: left; }
 .language-choices button[aria-pressed="true"] { background: #30483a; border-color: #64846f; }
 .language-check { margin-left: auto; color: #d5e4b7; visibility: hidden; }
@@ -23,7 +34,7 @@ header > div:first-child { grid-column: 1; grid-row: 1; width: fit-content; max-
 .source-link:focus-visible { color: #e8f1df; outline: 2px solid #ffd285; outline-offset: -2px; }
 h1 { font-size: clamp(23px, 3vw, 34px); font-weight: 500; margin: 0; letter-spacing: -.04em; }
 .controls { grid-column: 2; grid-row: 1; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
-.controls > button, .speed-control select { min-height: 40px; }
+.controls > button, .speed-control select, #language-toggle { height: 40px; min-height: 40px; line-height: 20px; white-space: nowrap; }
 @media (max-width: 960px) {
   header { grid-template-columns: minmax(0, 1fr) auto; }
   .language-control { grid-column: 2; align-self: start; }

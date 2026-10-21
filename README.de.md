@@ -4,7 +4,7 @@
 
 Ein kleines Ökosystem auf einem Sechseckraster: Gras wächst, Grasfresser fressen und teilen sich, Karnivoren folgen ihrer Beute. Jede Begegnung macht den Energiefluss sichtbar – Schritt für Schritt.
 
-Entwickelt mit TypeScript, Canvas 2D und Vite. Die Benutzeroberfläche folgt der bevorzugten unterstützten Browsersprache: Deutsch oder Englisch. Englisch ist Standard- und Rückfallsprache. Übersetzungen stehen in separaten [i18next-Sprachdateien](docs/i18n.md).
+Entwickelt mit TypeScript, Canvas 2D und Vite. Die Benutzeroberfläche unterstützt 30 Sprachen und folgt der bevorzugten unterstützten Browsersprache. Englisch ist Standard- und Rückfallsprache. Arabisch und Hebräisch verwenden Rechts-nach-links-Texte; vereinfachtes und traditionelles Chinesisch besitzen eigene Kataloge. Die separaten [i18next-Sprachdateien](docs/i18n.md) und ihre Pflege sind zusammen mit dem vollständigen Sprachpaket dokumentiert.
 
 **Online spielen:** [Welt der Waben öffnen](https://zebrajaeger.github.io/welt-der-waben/). Gehostet auf GitHub Pages und nach erfolgreichen Prüfungen auf `main` automatisch aktualisiert. Details stehen in der [Deployment-Anleitung](docs/deployment.md).
 
@@ -47,7 +47,7 @@ Die von Vite angezeigte Adresse öffnen. Bei bereits vorhandenem Repository reic
 
 Über den **Globus-Button ganz oben rechts** lässt sich die Sprache wählen. Flaggen und Sprach-Eigennamen wie „Deutsch“ und „English“ machen die Auswahl unabhängig von der aktuellen Sprache erkennbar. Sie wirkt sofort und wird im Browser gespeichert; beim nächsten Besuch hat sie Vorrang vor der Browsersprache. Simulation, Diagramm und Einstellungsentwurf bleiben erhalten. Bei blockiertem Speicher gilt die Wahl für den aktuellen Besuch. Die Wiedergabesteuerung bleibt rechtsbündig neben der Überschrift und lässt Platz für den Sprachbutton.
 
-Die Tabelle verwendet die Beschriftungen der deutschen Oberfläche.
+Die Tabelle verwendet die Beschriftungen der deutschen Oberfläche. Die Sprachliste scrollt intern; Pos1/Ende und Pfeiltasten machen den jeweils fokussierten Eintrag sichtbar.
 
 | Bedienelement | Funktion |
 | --- | --- |
