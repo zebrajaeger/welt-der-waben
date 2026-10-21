@@ -35,7 +35,7 @@ test('imports an exported file in another visitor and applies and saves it only 
   await field(page, 'speedMultiplier').fill('3.25');
   const text = await downloadSettings(page);
   const exportedDraft = await draft(page);
-  const visitor = await browser.newContext();
+  const visitor = await browser.newContext({ locale: 'de-DE' });
   try {
     const other = await visitor.newPage();
     await other.goto(page.url());
@@ -52,7 +52,7 @@ test('imports an exported file in another visitor and applies and saves it only 
     await expect(other.getByLabel('Tempo', { exact: true })).toHaveValue('2');
     await expect(other.locator('#settings-state')).toHaveText(/noch nicht übernommen.*weicht von gespeicherten/);
     await button(other, 'Übernehmen & neu starten').click();
-    await expect(other.locator('#status')).toHaveText('Tick 0 · 0.00 s · 4 Grasfresser · 3 Karnivoren');
+    await expect(other.locator('#status')).toHaveText('Tick 0 · 0,00 s · 4 Grasfresser · 3 Karnivoren');
     await expect(button(other, 'Weiter')).toBeVisible();
     await expect(other.getByLabel('Tempo', { exact: true })).toHaveValue('3.25');
     expect(await stored(other)).toBe(before);
@@ -184,7 +184,7 @@ test('transfers files without browser storage and keeps the actions accessible o
   await imported(page);
   await expect(field(page, 'width')).toHaveValue('12');
   await button(page, 'Übernehmen & neu starten').click();
-  await expect(page.locator('#status')).toHaveText('Tick 0 · 0.00 s · 10 Grasfresser · 10 Karnivoren');
+  await expect(page.locator('#status')).toHaveText('Tick 0 · 0,00 s · 10 Grasfresser · 10 Karnivoren');
   await button(page, 'Im Browser speichern').click();
   await expect(page.locator('#settings-message')).toHaveText(/nicht im Browser gespeichert/);
   expect(JSON.parse(await downloadSettings(page))).toEqual(config);

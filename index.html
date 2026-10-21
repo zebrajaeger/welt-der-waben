@@ -1,56 +1,63 @@
 <!doctype html>
-<html lang="de">
-  <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Wabenökosystem</title></head>
+<html lang="en">
+  <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title data-i18n="app.title">__I18N:app.title__</title></head>
   <body>
     <main>
-      <header><div><p class="eyebrow"><span>Ein kleines Ökosystem</span><a class="source-link" href="https://github.com/zebrajaeger/welt-der-waben" target="_blank" rel="noopener noreferrer" aria-label="Quellcode auf GitHub (neuer Tab)" title="Quellcode auf GitHub (neuer Tab)"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z" /></svg></a></p><h1>Leben in den Waben</h1></div>
+      <header><div><p class="eyebrow"><span data-i18n="app.eyebrow">__I18N:app.eyebrow__</span><a class="source-link" href="https://github.com/zebrajaeger/welt-der-waben" target="_blank" rel="noopener noreferrer" data-i18n-aria-label="app.source" aria-label="__I18N:app.source__" data-i18n-title="app.source" title="__I18N:app.source__"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z" /></svg></a></p><h1 data-i18n="app.heading">__I18N:app.heading__</h1></div>
         <div class="controls">
-          <button id="toggle" type="button">Pause</button><button id="step" type="button" title="Genau einen Tick (1/60 Simulationssekunde) weiter">Einzelschritt</button><button id="reset" type="button">Neustart</button>
-          <div class="speed-control"><label for="speed">Tempo</label><select id="speed"></select></div>
+          <button id="toggle" type="button" data-i18n="controls.pause">__I18N:controls.pause__</button><button id="step" type="button" data-i18n-title="controls.stepHelp" title="__I18N:controls.stepHelp__" data-i18n="controls.step">__I18N:controls.step__</button><button id="reset" type="button" data-i18n="controls.reset">__I18N:controls.reset__</button>
+          <div class="speed-control"><label for="speed" data-i18n="controls.speed">__I18N:controls.speed__</label><select id="speed"></select></div>
+        </div>
+        <div id="language-control" class="language-control">
+          <button id="language-toggle" type="button" aria-expanded="false" aria-controls="language-choices" data-i18n-aria-label="language.choose" aria-label="__I18N:language.choose__" data-i18n-title="language.choose" title="__I18N:language.choose__">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M5 6.5h14M5 17.5h14"/></svg>
+            <span id="language-current" aria-hidden="true"></span><span aria-hidden="true">▾</span>
+          </button>
+          <div id="language-choices" class="language-choices" role="group" data-i18n-aria-label="language.choose" aria-label="__I18N:language.choose__" hidden></div>
         </div>
       </header>
       <details id="settings" class="settings">
-        <summary>Einstellungen</summary>
+        <summary data-i18n="settings.title">__I18N:settings.title__</summary>
         <form id="settings-form" novalidate>
-          <p id="settings-help">Alle Raten gelten pro Simulationssekunde; 60 Ticks = 1 s. Änderungen werden erst durch Übernehmen aktiv. Dabei beginnt ein neuer Lauf.</p>
+          <p id="settings-help" data-i18n="settings.help">__I18N:settings.help__</p>
           <div id="settings-fields" class="settings-fields"></div>
           <div class="settings-actions">
-            <button type="submit">Übernehmen &amp; neu starten</button>
-            <button id="settings-save" type="button">Im Browser speichern</button>
-            <button id="settings-defaults" type="button">Standardwerte</button>
-            <button id="settings-export" type="button">Als JSON exportieren</button>
-            <button id="settings-import" type="button" aria-controls="settings-file" aria-describedby="settings-file-help">JSON importieren</button>
-            <input id="settings-file" type="file" accept=".json,application/json" aria-label="JSON-Einstellungsdatei" hidden />
+            <button type="submit" data-i18n="settings.apply">__I18N:settings.apply__</button>
+            <button id="settings-save" type="button" data-i18n="settings.save">__I18N:settings.save__</button>
+            <button id="settings-defaults" type="button" data-i18n="settings.defaults">__I18N:settings.defaults__</button>
+            <button id="settings-export" type="button" data-i18n="settings.export">__I18N:settings.export__</button>
+            <button id="settings-import" type="button" aria-controls="settings-file" aria-describedby="settings-file-help" data-i18n="settings.import">__I18N:settings.import__</button>
+            <input id="settings-file" type="file" accept=".json,application/json" data-i18n-aria-label="settings.file" aria-label="__I18N:settings.file__" hidden />
           </div>
-          <p class="settings-hint">Speichern bewahrt den Formularentwurf für spätere Besuche dieser Browseradresse. Standardwerte setzt das Formular zurück; anschließend übernehmen oder speichern.</p>
-          <p id="settings-file-help" class="settings-hint">JSON-Dateien übertragen nur Einstellungen. Export lädt den gültigen Formularentwurf herunter. Import ersetzt nur das Formular; anschließend übernehmen oder im Browser speichern. Die Datei bleibt auf diesem Gerät.</p>
+          <p class="settings-hint" data-i18n="settings.saveHelp">__I18N:settings.saveHelp__</p>
+          <p id="settings-file-help" class="settings-hint" data-i18n="settings.fileHelp">__I18N:settings.fileHelp__</p>
           <p id="settings-state" role="status"></p>
           <p id="settings-message" role="status" tabindex="-1"></p>
         </form>
       </details>
       <details id="history" class="history">
-        <summary>Verlauf</summary>
+        <summary data-i18n="history.title">__I18N:history.title__</summary>
         <div class="history-body">
-          <fieldset class="history-metrics"><legend>Messreihen</legend><div id="history-metrics"></div></fieldset>
+          <fieldset class="history-metrics"><legend data-i18n="history.series">__I18N:history.series__</legend><div id="history-metrics"></div></fieldset>
           <div class="history-controls">
-            <div><label for="history-mode">Darstellung</label><select id="history-mode"><option value="scroll">Wandernde Kurven</option><option value="sweep">Umlaufender Cursor</option></select></div>
-            <div><label for="history-span">Zeitspanne</label><select id="history-span" aria-describedby="history-help"></select></div>
+            <div><label for="history-mode" data-i18n="history.mode">__I18N:history.mode__</label><select id="history-mode"><option value="scroll" data-i18n="history.scroll">__I18N:history.scroll__</option><option value="sweep" data-i18n="history.sweep">__I18N:history.sweep__</option></select></div>
+            <div><label for="history-span" data-i18n="history.span">__I18N:history.span__</label><select id="history-span" aria-describedby="history-help"></select></div>
           </div>
-          <p id="history-empty" hidden>Bitte mindestens eine Messreihe auswählen.</p>
-          <div class="history-chart"><canvas id="history-canvas" role="img" tabindex="0" aria-label="Zeitlicher Verlauf; Werte mit Maus oder Pfeiltasten erkunden" aria-describedby="history-time history-range history-sweep history-tooltip"></canvas></div>
+          <p id="history-empty" hidden data-i18n="history.empty">__I18N:history.empty__</p>
+          <div class="history-chart"><canvas id="history-canvas" role="img" tabindex="0" data-i18n-aria-label="history.canvas" aria-label="__I18N:history.canvas__" aria-describedby="history-time history-range history-sweep history-tooltip"></canvas></div>
           <details class="history-extra">
-            <summary>Details</summary>
-            <p id="history-help">Simulationssekunden pro Diagrammbreite. Kürzere Zeitspanne = schnellere Bewegung. Anzahl links, Energie rechts.</p>
-            <p id="history-sweep" hidden>Der Cursor überschreibt den älteren Verlauf. Rechts vom Cursor bleibt der vorige Umlauf blasser sichtbar; die Zeitangaben gehören zum jeweiligen Abschnitt.</p>
+            <summary data-i18n="history.details">__I18N:history.details__</summary>
+            <p id="history-help" data-i18n="history.help">__I18N:history.help__</p>
+            <p id="history-sweep" hidden data-i18n="history.sweepHelp">__I18N:history.sweepHelp__</p>
           <div class="history-readout">
             <div id="history-time">
-              <div class="history-readout-item"><span>Tick</span><span id="history-tick" class="history-number history-number--time"></span></div>
-              <div class="history-readout-item"><span>Zeit</span><span id="history-seconds" class="history-number history-number--time"></span><span>s</span></div>
+              <div class="history-readout-item"><span data-i18n="history.tick">__I18N:history.tick__</span><span id="history-tick" class="history-number history-number--time"></span></div>
+              <div class="history-readout-item"><span data-i18n="history.time">__I18N:history.time__</span><span id="history-seconds" class="history-number history-number--time"></span><span data-i18n="units.shortSeconds">__I18N:units.shortSeconds__</span></div>
             </div>
             <div id="history-range">
-              <span>Aufgezeichneter Verlauf:</span>
-              <div class="history-range-values"><span id="history-range-start" class="history-number history-number--time"></span><span>–</span><span id="history-range-end" class="history-number history-number--time"></span><span>s</span></div>
-              <span>(max. 300 s)</span>
+              <span data-i18n="history.recorded">__I18N:history.recorded__</span>
+              <div class="history-range-values"><span id="history-range-start" class="history-number history-number--time"></span><span>–</span><span id="history-range-end" class="history-number history-number--time"></span><span data-i18n="units.shortSeconds">__I18N:units.shortSeconds__</span></div>
+              <span data-i18n="history.maximum">__I18N:history.maximum__</span>
             </div>
           </div>
           </details>
@@ -58,11 +65,11 @@
       </details>
       <p id="settings-notice" role="status"></p>
       <p id="status" aria-live="polite"></p>
-      <section class="field-container" aria-label="Simulationsfeld"><canvas id="field" aria-label="Wabenfeld mit Gras, Grasfressern und Karnivoren"></canvas></section>
+      <section class="field-container" data-i18n-aria-label="world.label" aria-label="__I18N:world.label__"><canvas id="field" data-i18n-aria-label="world.canvas" aria-label="__I18N:world.canvas__"></canvas></section>
       <footer>
-        <p><span class="grass-dot"></span> Gras <span class="herbivore-dot"></span> Grasfresser <span class="carnivore-dot"></span> Karnivoren</p>
-        <div class="energy-key"><span>Energie</span><canvas width="48" height="48" data-energy="0.03" aria-label="Wenig Energie"></canvas><canvas width="48" height="48" data-energy="0.5" aria-label="Mittlere Energie"></canvas><canvas width="48" height="48" data-energy="1" aria-label="Volle Energie"></canvas><span>wenig → viel</span></div>
-        <p class="hint">Gras wächst. Grasfresser ziehen. Karnivoren folgen ihrer Beute.</p>
+        <p><span class="grass-dot"></span> <span data-i18n="world.grass">__I18N:world.grass__</span> <span class="herbivore-dot"></span> <span data-i18n="world.herbivores">__I18N:world.herbivores__</span> <span class="carnivore-dot"></span> <span data-i18n="world.carnivores">__I18N:world.carnivores__</span></p>
+        <div class="energy-key"><span data-i18n="history.energy">__I18N:history.energy__</span><canvas width="48" height="48" data-energy="0.03" data-i18n-aria-label="world.lowEnergy" aria-label="__I18N:world.lowEnergy__"></canvas><canvas width="48" height="48" data-energy="0.5" data-i18n-aria-label="world.mediumEnergy" aria-label="__I18N:world.mediumEnergy__"></canvas><canvas width="48" height="48" data-energy="1" data-i18n-aria-label="world.fullEnergy" aria-label="__I18N:world.fullEnergy__"></canvas><span data-i18n="world.energyRange">__I18N:world.energyRange__</span></div>
+        <p class="hint" data-i18n="world.hint">__I18N:world.hint__</p>
       </footer>
     </main><script type="module" src="/src/main.ts"></script>
   </body>

@@ -4,7 +4,7 @@
 
 A small ecosystem on a hexagonal grid: grass grows, herbivores feed and divide, and carnivores follow their prey. Watch energy flow through each encounter, one animated step at a time.
 
-Built with TypeScript, Canvas 2D and Vite. The application interface is currently in German.
+Built with TypeScript, Canvas 2D and Vite. The interface uses your browser’s preferred supported language: English or German, with English as the default and fallback. Translations live in separate [i18next language files](docs/i18n.md).
 
 **Play online:** [Open Welt der Waben](https://zebrajaeger.github.io/welt-der-waben/). Hosted on GitHub Pages and updated automatically after successful checks on `main`. See the [deployment guide](docs/deployment.md) for details.
 
@@ -19,6 +19,8 @@ Built with TypeScript, Canvas 2D and Vite. The application interface is currentl
 - **Responsive field:** the whole grid fits the available window area without distortion, including while paused.
 
 ## Screenshots
+
+The shared screenshots show the German interface.
 
 ![The hexagonal ecosystem with green grass, yellow herbivores and red carnivores](docs/images/simulation.png)
 
@@ -43,29 +45,31 @@ Open the address printed by Vite. If you already have the repository, run the la
 
 ## Controls
 
-The table uses the labels shown in the German interface.
+Use the **globe button at the top right** to select a language. Flags and each language's own name make the options recognizable in any interface language. Your choice takes effect immediately, is saved in this browser and overrides browser language preferences on later visits. Switching preserves the current simulation, chart and settings draft; if storage is blocked, the choice still works for this visit. Playback controls remain right-aligned beside the heading, leaving space for the language button.
+
+The table uses English interface labels. German browsers display their German equivalents.
 
 | Control | What it does |
 | --- | --- |
-| **Pause / Weiter** | Freeze every process or resume from the same point. |
-| **Einzelschritt** | While paused, advance exactly one tick: 1/60 of a simulation second, even during movement. |
-| **Neustart** | Start a new random world with the active settings; keep the pause state and current speed. |
-| **Tempo** | Change playback immediately, from 0.25× to 8×. At 1×, 60 ticks pass per real second; at 2×, 120. |
-| **Einstellungen** | Expand or collapse the parameter panel. |
-| **Verlauf** | Expand or collapse the population and energy history chart. |
-| **GitHub icon** | Next to “Ein kleines Ökosystem”, open the source repository in a new tab. Also accessible with Tab and Enter. |
+| **Pause / Resume** | Freeze every process or resume from the same point. |
+| **Single step** | While paused, advance exactly one tick: 1/60 of a simulation second, even during movement. |
+| **Restart** | Start a new random world with the active settings; keep the pause state and current speed. |
+| **Speed** | Change playback immediately, from 0.25× to 8×. At 1×, 60 ticks pass per real second; at 2×, 120. |
+| **Settings** | Expand or collapse the parameter panel. |
+| **History** | Expand or collapse the population and energy history chart. |
+| **GitHub icon** | Next to “A small ecosystem”, open the source repository in a new tab. Also accessible with Tab and Enter. |
 
 The status line shows the tick, elapsed simulation time and population of each species. Resizing the window changes only the projection. Different aspect ratios leave some empty space around the centered grid.
 
-The **Verlauf** panel records the last 300 simulation seconds, including while closed. Choose any combination of carnivore count, herbivore count, and total energy in carnivores, herbivores or grass. Counts use the left axis; energy uses the right. Both population counts are selected initially.
+The **History** panel records the last 300 simulation seconds, including while closed. Choose any combination of carnivore count, herbivore count, and total energy in carnivores, herbivores or grass. Counts use the left axis; energy uses the right. Both population counts are selected initially.
 
 Hover over the plot to inspect the nearest recorded tick at that horizontal position. The floating tooltip shows its time and all five values, including hidden series. It updates under a stationary pointer while curves scroll, and respects both sweeps on either side of the moving cursor. Empty history areas show no tooltip. Keyboard: focus the chart, use arrow keys or Home/End, and Escape to dismiss.
 
-Current energy and time readouts use two decimal places; counts and ticks remain integers. Fixed number fields keep neighboring labels in place as digits change. Very long values use scientific notation within the same space; hover over the number for its full value, which is also available to screen readers.
+Numbers follow the selected language (English decimal point, German decimal comma). Current energy and time readouts use two decimal places; counts and ticks remain integers. Fixed number fields keep neighboring labels in place as digits change. Very long values use scientific notation within the same space; hover over the number for its full value, which is also available to screen readers.
 
 The X-axis always shows one decimal place with a fixed alignment. **Details** reveals tick, time range and explanatory text; these stay collapsed initially to leave more room for the simulation.
 
-**Darstellung** switches between **Wandernde Kurven** (the current time stays on the right while curves move left; the default) and **Umlaufender Cursor** (the cursor sweeps right, returns to the left and overwrites older curves). The previous sweep remains dimmed to the right of the cursor, with its own simulation time labels. **Zeitspanne** selects 10, 30, 60, 120 or 300 simulation seconds per chart width, defaulting to 60. A shorter span means faster horizontal movement without changing simulation speed.
+**Display** switches between **Scrolling curves** (the current time stays on the right while curves move left; the default) and **Sweeping cursor** (the cursor sweeps right, returns to the left and overwrites older curves). The previous sweep remains dimmed to the right of the cursor, with its own simulation time labels. **Time span** selects 10, 30, 60, 120 or 300 simulation seconds per chart width, defaulting to 60. A shorter span means faster horizontal movement without changing simulation speed.
 
 Pause freezes the history and cursor; single step adds exactly one tick. Restart or applying settings clears the history while retaining chart choices. Saving or importing settings into the draft does not clear it. Reload begins a new history with the chart defaults; history and chart choices are not saved or included in settings JSON.
 
@@ -91,7 +95,7 @@ Both species consume energy every tick, including while waiting, moving, feeding
 
 Above its division threshold, a resident can split if at least one neighboring cell is free. Its remaining energy is divided equally. With two free neighbors, both halves move out in different directions; with only one, one half stays. Moving herbivore halves feed in their destination cells. Each half completes its own movement and waiting period before acting again.
 
-Populations may become extinct. **Neustart** begins another random run.
+Populations may become extinct. **Restart** begins another random run.
 
 ## Settings and units
 
@@ -99,13 +103,13 @@ Form edits are a **draft** until explicitly applied. The panel reports whether t
 
 | Action | Effect |
 | --- | --- |
-| **Übernehmen & neu starten** | Validate the draft and start a new world at tick zero. A paused simulation stays paused. Does not save the draft. |
-| **Im Browser speichern** | Save the valid draft for later visits. Does not change or restart the current world. |
-| **Standardwerte** | Restore the current program defaults in the form. Then apply them to start a run, or save them for later visits. |
-| **Als JSON exportieren** | Download the complete valid form draft as a JSON file, without applying or saving it. |
-| **JSON importieren** | Choose a local JSON settings file and load it into the form. Apply it to start a new run, or save it for later visits. |
+| **Apply & restart** | Validate the draft and start a new world at tick zero. A paused simulation stays paused. Does not save the draft. |
+| **Save in browser** | Save the valid draft for later visits. Does not change or restart the current world. |
+| **Defaults** | Restore the current program defaults in the form. Then apply them to start a run, or save them for later visits. |
+| **Export as JSON** | Download the complete valid form draft as a JSON file, without applying or saving it. |
+| **Import JSON** | Choose a local JSON settings file and load it into the form. Apply it to start a new run, or save it for later visits. |
 
-The top **Tempo** selector works immediately and also updates the draft's speed field, preserving other edits. Changing **Starttempo (×)** inside the form takes effect only when applied. Neither action saves automatically. **Neustart** uses active values and preserves unapplied form edits.
+The top **Speed** selector works immediately and also updates the draft's speed field, preserving other edits. Changing **Initial speed (×)** inside the form takes effect only when applied. Neither action saves automatically. **Restart** uses active values and preserves unapplied form edits.
 
 ### Parameters
 
@@ -135,9 +139,11 @@ Invalid or blocked storage produces a notice; editing and applying settings rema
 
 ### JSON settings files
 
-Use **Als JSON exportieren** in the settings panel to download `welt-der-waben-settings.json`. The file contains the form draft, including start energy and start speed, even if you have not applied or saved it yet. Invalid drafts produce an explanation instead of a download. Files contain settings only; they do not restore animals, grass, tick counts or the same random world.
+Settings JSON and browser storage records are language-independent; files can be transferred between English and German sessions without conversion.
 
-To transfer settings, open **JSON importieren** and select the downloaded file in another browser, on another device, or at another address. Import replaces the entire form draft after validation. It keeps the current world, pause state, active speed and saved settings. Choose **Übernehmen & neu starten** to activate it, and **Im Browser speichern** to keep it after reloading. These are separate actions.
+Use **Export as JSON** in the settings panel to download `welt-der-waben-settings.json`. The file contains the form draft, including start energy and start speed, even if you have not applied or saved it yet. Invalid drafts produce an explanation instead of a download. Files contain settings only; they do not restore animals, grass, tick counts or the same random world.
+
+To transfer settings, open **Import JSON** and select the downloaded file in another browser, on another device, or at another address. Import replaces the entire form draft after validation. It keeps the current world, pause state, active speed and saved settings. Choose **Apply & restart** to activate it, and **Save in browser** to keep it after reloading. These are separate actions.
 
 Cancelling or importing an unreadable, invalid or incompatible file leaves existing values intact and reports errors where needed. File operations stay on your device and work even when browser storage is blocked. Version 1 files are migrated using half of each species' maximum as its start energy. Version 2 requires all parameters; unsupported versions are rejected. Unknown extra fields are ignored and omitted from subsequent exports.
 

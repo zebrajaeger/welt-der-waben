@@ -1,5 +1,7 @@
 ﻿export const ticksPerSecond = 60;
 
+import { ApplicationError } from './errors';
+
 export interface SpeciesConfig {
   initialCount: number;
   initialEnergy: number;
@@ -35,25 +37,25 @@ export const defaultConfig: Config = {
 };
 export function validateConfig(config: Config): void {
   const number = (value: number, name: string, min: number, strict = false) => {
-    if (!Number.isFinite(value) || (strict ? value <= min : value < min)) throw new Error(`${name} muss endlich und ${strict ? '>' : '>='} ${min} sein`);
+    if (!Number.isFinite(value) || (strict ? value <= min : value < min)) throw new ApplicationError(strict ? 'positive' : 'minimum', { min }, name);
   };
   const integer = (value: number, name: string, min: number) => {
-    if (!Number.isSafeInteger(value) || value < min) throw new Error(`${name} muss eine ganze Zahl >= ${min} sein`);
+    if (!Number.isSafeInteger(value) || value < min) throw new ApplicationError('integer', { min }, name);
   };
   for (const key of ['width', 'height', 'approachTicks', 'followTicks', 'waitTicks', 'swellTicks', 'divisionApproachTicks', 'divisionFollowTicks'] as const) integer(config[key], key, 1);
   for (const key of ['grassMax', 'energyTransferPerSecond', 'speedMultiplier'] as const) number(config[key], key, 0, true);
   for (const key of ['grassGrowthPerSecond', 'grassEfficiency', 'preyEfficiency'] as const) number(config[key], key, 0);
   for (const kind of ['herbivore', 'carnivore'] as const) {
     const species = config[kind];
-    if (!species) throw new Error(`${kind} fehlt`);
+    if (!species) throw new ApplicationError('species', {}, kind);
     integer(species.initialCount, `${kind}.initialCount`, 0);
     number(species.maxEnergy, `${kind}.maxEnergy`, 0, true);
     number(species.initialEnergy, `${kind}.initialEnergy`, 0, true);
-    if (species.initialEnergy > species.maxEnergy) throw new Error(`${kind}.initialEnergy darf die Maximalenergie nicht überschreiten`);
+    if (species.initialEnergy > species.maxEnergy) throw new ApplicationError('initialEnergy', {}, `${kind}.initialEnergy`);
     number(species.energyDrainPerSecond, `${kind}.energyDrainPerSecond`, 0, true);
     number(species.divisionFraction, `${kind}.divisionFraction`, 0, true);
-    if (species.divisionFraction >= 1) throw new Error(`${kind}.divisionFraction muss < 1 sein`);
+    if (species.divisionFraction >= 1) throw new ApplicationError('fraction', {}, `${kind}.divisionFraction`);
   }
-  if (config.width * config.height < config.herbivore.initialCount + config.carnivore.initialCount) throw new Error('Startpopulation übersteigt die verfügbare Zellenzahl');
-  if (config.grassGrowthPerSecond * config.grassEfficiency >= config.herbivore.energyDrainPerSecond) throw new Error('Graswachstum mal Wirkungsgrad muss kleiner als Grasfresser-Verbrauch pro Simulationssekunde sein');
+  if (config.width * config.height < config.herbivore.initialCount + config.carnivore.initialCount) throw new ApplicationError('population');
+  if (config.grassGrowthPerSecond * config.grassEfficiency >= config.herbivore.energyDrainPerSecond) throw new ApplicationError('growth');
 }

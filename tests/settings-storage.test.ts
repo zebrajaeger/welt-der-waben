@@ -28,7 +28,7 @@ describe('local settings storage', () => {
       data.set(settingsKey, raw);
       const loaded = loadSettings(storage);
       expect(loaded.config).toEqual(defaultConfig); expect(loaded.saved).toBeUndefined();
-      expect(loaded.notice).toMatch(/ungültig/); expect(data.get(settingsKey)).toBe(raw);
+      expect(loaded.notice).toMatch(/storage.invalid/); expect(data.get(settingsKey)).toBe(raw);
     }
   });
   it('loads version 1 with its former start energy without losing other parameters', () => {
@@ -47,16 +47,16 @@ describe('local settings storage', () => {
     saveSettings(loaded.config, storage);
     expect(JSON.parse(data.get(settingsKey)!).version).toBe(2);
     data.set(settingsKey, JSON.stringify({ version: 2, config: legacy }));
-    expect(loadSettings(storage).notice).toMatch(/ungültig/);
+    expect(loadSettings(storage).notice).toMatch(/storage.invalid/);
   });
   it('handles throwing access, reads and writes and preserves the last successful save', () => {
     const inaccessible = () => { throw new Error('denied'); };
     const unreadable = () => ({ getItem() { throw new Error('denied'); }, setItem() {} });
-    for (const storage of [inaccessible, unreadable]) expect(loadSettings(storage).notice).toMatch(/nicht verfügbar/);
-    expect(() => saveSettings(defaultConfig, inaccessible)).toThrow(/nicht.*gespeichert/);
+    for (const storage of [inaccessible, unreadable]) expect(loadSettings(storage).notice).toMatch(/storage.unavailable/);
+    expect(() => saveSettings(defaultConfig, inaccessible)).toThrow(/storage/);
     const { data, storage } = memory(); saveSettings(defaultConfig, storage);
     const previous = data.get(settingsKey);
-    expect(() => saveSettings(defaultConfig, () => ({ getItem: storage().getItem, setItem() { throw new Error('quota'); } }))).toThrow(/nicht.*gespeichert/);
+    expect(() => saveSettings(defaultConfig, () => ({ getItem: storage().getItem, setItem() { throw new Error('quota'); } }))).toThrow(/storage/);
     expect(data.get(settingsKey)).toBe(previous);
     expect(() => saveSettings({ ...defaultConfig, width: 0 }, storage)).toThrow();
     expect(data.get(settingsKey)).toBe(previous);

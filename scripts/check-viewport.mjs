@@ -41,7 +41,7 @@ export async function measureViewport(page, columns = 30, rows = 20) {
 export async function checkViewport(browser, url, errors) {
   const measurements = [];
   for (const deviceScaleFactor of [1, 2]) {
-    const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor });
+    const context = await browser.newContext({ locale: 'de-DE', viewport: { width: 1440, height: 1000 }, deviceScaleFactor });
     // Capture the actual app's sampled frame, without adding a debug API to production.
     await context.route(/\/src\/playback\.ts(?:\?.*)?$/, async route => {
       const response = await route.fetch(), source = await response.text();

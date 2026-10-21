@@ -186,7 +186,7 @@ test('fits both panels and redraws paused charts at desktop and small viewport s
 });
 
 test('sizes the chart bitmap for a high density display', async ({ browser, baseURL }) => {
-  const context = await browser.newContext({ deviceScaleFactor: 2 });
+  const context = await browser.newContext({ locale: 'de-DE', deviceScaleFactor: 2 });
   try {
     const page = await context.newPage(); await page.goto(baseURL!);
     await button(page, 'Pause').click(); await page.locator('#history > summary').click();

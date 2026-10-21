@@ -1,3 +1,4 @@
+import { ApplicationError } from './errors';
 ﻿import type { Config } from './config';
 import { ticksPerSecond } from './config';
 import { sampleAnimation, type AnimationFrame } from './animation';
@@ -40,7 +41,7 @@ export class Playback {
     }
   }
   setSpeedMultiplier(value: number, now: number): void {
-    if (!Number.isFinite(value) || value <= 0) throw new Error('Tempo muss eine endliche Zahl > 0 sein');
+    if (!Number.isFinite(value) || value <= 0) throw new ApplicationError('positive', { min: 0 }, 'speedMultiplier');
     this.tick(now); this.multiplier = value;
   }
   toggle(now: number): void {

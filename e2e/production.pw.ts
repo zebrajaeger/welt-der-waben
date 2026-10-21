@@ -49,7 +49,7 @@ test('production build loads its assets and preserves controls and settings unde
     await page.locator(`[name="${path}"]`).fill(value);
   }
   await button('Übernehmen & neu starten').click();
-  await expect(status).toHaveText('Tick 0 · 0.00 s · 4 Grasfresser · 3 Karnivoren');
+  await expect(status).toHaveText('Tick 0 · 0,00 s · 4 Grasfresser · 3 Karnivoren');
   await expect(button('Weiter')).toBeVisible();
   await expect(page.getByLabel('Tempo', { exact: true })).toHaveValue('3');
   await button('Im Browser speichern').click();
@@ -57,7 +57,7 @@ test('production build loads its assets and preserves controls and settings unde
   await page.reload();
   await button('Pause').click();
   await button('Neustart').click();
-  await expect(status).toHaveText('Tick 0 · 0.00 s · 4 Grasfresser · 3 Karnivoren');
+  await expect(status).toHaveText('Tick 0 · 0,00 s · 4 Grasfresser · 3 Karnivoren');
   await expect(page.getByLabel('Tempo', { exact: true })).toHaveValue('3');
   await page.locator('#settings summary').click();
   await expect(page.locator('[name="width"]')).toHaveValue('12');
@@ -65,13 +65,13 @@ test('production build loads its assets and preserves controls and settings unde
   await expect(page.locator('[name="carnivore.initialEnergy"]')).toHaveValue('18');
 
   // Another visitor starts with defaults, not the first visitor's stored parameters.
-  const visitor = await browser.newContext();
+  const visitor = await browser.newContext({ locale: 'de-DE' });
   try {
     const other = await visitor.newPage();
     await other.goto(page.url());
     await other.getByRole('button', { name: 'Pause', exact: true }).click();
     await other.getByRole('button', { name: 'Neustart', exact: true }).click();
-    await expect(other.locator('#status')).toHaveText('Tick 0 · 0.00 s · 10 Grasfresser · 10 Karnivoren');
+    await expect(other.locator('#status')).toHaveText('Tick 0 · 0,00 s · 10 Grasfresser · 10 Karnivoren');
   } finally { await visitor.close(); }
 
   const loaded = new Map<string, string>();

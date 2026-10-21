@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 
 export async function checkSettings(browser, url, errors) {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  const context = await browser.newContext({ locale: 'de-DE', viewport: { width: 1440, height: 1000 } });
   const page = await context.newPage();
   page.on('pageerror', error => errors.push(error.message));
   const input = path => page.locator(`[name="${path}"]`);
@@ -21,7 +21,7 @@ export async function checkSettings(browser, url, errors) {
     const initial = await status();
     await page.locator('#settings summary').focus(); await page.keyboard.press('Enter');
     assert.equal(await page.locator('#settings').evaluate(e => e.open), true);
-    assert.equal(await page.locator('#settings input').count(), 24);
+    assert.equal(await page.locator('#settings-fields input').count(), 24);
     assert.equal(await status(), initial);
     assert.match(await state(), /Werte sind aktiv/);
     await input('width').fill(''); await apply();
@@ -86,7 +86,7 @@ export async function checkSettings(browser, url, errors) {
     await page.screenshot({ path: '.browser-check/settings-desktop-open.png', fullPage: true });
     await page.setViewportSize({ width: 360, height: 740 });
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
-    for (const field of await page.locator('#settings input, #settings button').all()) {
+    for (const field of await page.locator('#settings-fields input, #settings button').all()) {
       const bounds = await field.boundingBox(); assert(bounds && bounds.x >= 0 && bounds.x + bounds.width <= 360);
     }
     await page.screenshot({ path: '.browser-check/settings-mobile-open.png', fullPage: true });
@@ -119,7 +119,7 @@ export async function checkSettings(browser, url, errors) {
   } finally { await context.close(); }
 
   for (const blocked of ['access', 'read', 'write']) {
-    const isolated = await browser.newContext();
+    const isolated = await browser.newContext({ locale: 'de-DE' });
     await isolated.addInitScript(mode => {
       if (mode === 'access') Object.defineProperty(window, 'localStorage', { get() { throw new DOMException('Denied', 'SecurityError'); } });
       else Object.defineProperty(Storage.prototype, mode === 'read' ? 'getItem' : 'setItem', { value() { throw new DOMException('Denied', 'SecurityError'); } });

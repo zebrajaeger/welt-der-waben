@@ -35,7 +35,7 @@ export async function checkSpeed(page, browser, errors) {
   assert.equal(await status(),paused);
   await page.screenshot({path:'.browser-check/async-mobile.png',fullPage:true});
   await page.setViewportSize({width:1440,height:1000});
-  const custom=await browser.newPage();custom.on('pageerror',e=>errors.push(e.message));
+  const custom=await browser.newPage({ locale: 'de-DE' });custom.on('pageerror',e=>errors.push(e.message));
   await custom.route(/\/src\/config\.ts(?:\?.*)?$/,async route=>{
     const response=await route.fetch(), original=await response.text(), body=original.replace(/speedMultiplier:\s*2\b/,'speedMultiplier: 3');
     assert.notEqual(body,original);await route.fulfill({response,body});

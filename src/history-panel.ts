@@ -2,13 +2,16 @@ import { ticksPerSecond } from './config';
 import { type History, type HistorySample, type Metric } from './history';
 import { drawHistory, historyPlot, historySampleAt, metrics, timeSpans, type ChartMode } from './history-chart';
 import { formatHistoryNumber, metricCharacters, timeCharacters, type HistoryNumberKind } from './history-format';
+import { createLocalization, type Localization } from './i18n';
+import { ApplicationError } from './errors';
 
-function createNumber(element: HTMLElement, kind: HistoryNumberKind, capacity: number, unit: string) {
+function createNumber(element: HTMLElement, kind: HistoryNumberKind, capacity: number, unitKey: string, i18n: Localization) {
   const visible = document.createElement('span'), full = document.createElement('span');
   visible.className = 'history-number-text'; full.className = 'history-number-full';
   element.classList.add('history-number'); element.replaceChildren(visible, full);
   return (value: number) => {
-    const formatted = formatHistoryNumber(value, kind, capacity), shortened = formatted.text !== formatted.full;
+    const formatted = formatHistoryNumber(value, kind, capacity, i18n.locale), shortened = formatted.text !== formatted.full;
+    const unit = i18n.t(unitKey);
     visible.textContent = formatted.text;
     visible.setAttribute('aria-hidden', String(shortened));
     full.hidden = !shortened; full.textContent = `${formatted.full} ${unit}`;
@@ -17,14 +20,14 @@ function createNumber(element: HTMLElement, kind: HistoryNumberKind, capacity: n
 }
 
 /** Owns chart choices and rendering; recording is independent of the panel. */
-export function createHistoryPanel(history: History, signal: AbortSignal) {
+export function createHistoryPanel(history: History, signal: AbortSignal, i18n: Localization = createLocalization()) {
   const panel = document.querySelector<HTMLDetailsElement>('#history')!;
   const mode = document.querySelector<HTMLSelectElement>('#history-mode')!;
   const span = document.querySelector<HTMLSelectElement>('#history-span')!;
   const canvas = document.querySelector<HTMLCanvasElement>('#history-canvas')!;
   const host = canvas.parentElement!;
   const context = canvas.getContext('2d');
-  if (!context) throw new Error('Dieser Browser unterstützt Canvas 2D nicht.');
+  if (!context) throw new ApplicationError('canvas');
   const fields = document.querySelector('#history-metrics')!;
   const tooltip = document.createElement('div');
   tooltip.id = 'history-tooltip'; tooltip.className = 'history-tooltip'; tooltip.hidden = true;
@@ -32,18 +35,25 @@ export function createHistoryPanel(history: History, signal: AbortSignal) {
   const tooltipTime = document.createElement('div'), tooltipTick = document.createElement('span');
   const tooltipSeconds = document.createElement('span'), tooltipValues = document.createElement('dl');
   tooltipValues.id = 'history-tooltip-values';
-  tooltipTime.append('Zeit ', tooltipSeconds, ' s · Tick ', tooltipTick);
+  const translateTooltipTime = () => {
+    tooltipTime.replaceChildren();
+    const positionText = i18n.t('tooltip.position', { seconds: '\u0000seconds\u0000', tick: '\u0000tick\u0000' });
+    for (const part of positionText.split(/(\u0000(?:seconds|tick)\u0000)/)) {
+      tooltipTime.append(part === '\u0000seconds\u0000' ? tooltipSeconds : part === '\u0000tick\u0000' ? tooltipTick : part);
+    }
+  };
+  translateTooltipTime();
   tooltip.append(tooltipTime, tooltipValues); document.body.append(tooltip);
-  const setTooltipTime = createNumber(tooltipSeconds, 'decimal', timeCharacters, 'Sekunden');
-  const setTooltipTick = createNumber(tooltipTick, 'integer', timeCharacters, 'Ticks');
+  const setTooltipTime = createNumber(tooltipSeconds, 'decimal', timeCharacters, 'units.seconds', i18n);
+  const setTooltipTick = createNumber(tooltipTick, 'integer', timeCharacters, 'units.ticks', i18n);
   tooltipSeconds.classList.add('history-number--time'); tooltipTick.classList.add('history-number--time');
   tooltipSeconds.id = 'history-tooltip-seconds'; tooltipTick.id = 'history-tooltip-tick';
   const empty = document.querySelector<HTMLElement>('#history-empty')!;
   const sweep = document.querySelector<HTMLElement>('#history-sweep')!;
-  const setTick = createNumber(document.querySelector<HTMLElement>('#history-tick')!, 'integer', timeCharacters, 'Ticks');
-  const setSeconds = createNumber(document.querySelector<HTMLElement>('#history-seconds')!, 'decimal', timeCharacters, 'Sekunden');
-  const setStart = createNumber(document.querySelector<HTMLElement>('#history-range-start')!, 'decimal', timeCharacters, 'Sekunden');
-  const setEnd = createNumber(document.querySelector<HTMLElement>('#history-range-end')!, 'decimal', timeCharacters, 'Sekunden');
+  const setTick = createNumber(document.querySelector<HTMLElement>('#history-tick')!, 'integer', timeCharacters, 'units.ticks', i18n);
+  const setSeconds = createNumber(document.querySelector<HTMLElement>('#history-seconds')!, 'decimal', timeCharacters, 'units.seconds', i18n);
+  const setStart = createNumber(document.querySelector<HTMLElement>('#history-range-start')!, 'decimal', timeCharacters, 'units.seconds', i18n);
+  const setEnd = createNumber(document.querySelector<HTMLElement>('#history-range-end')!, 'decimal', timeCharacters, 'units.seconds', i18n);
   const inputs = new Map<Metric, HTMLInputElement>();
   const outputs = new Map<Metric, (value: number) => void>();
   let lastSample: HistorySample | undefined;
@@ -51,7 +61,7 @@ export function createHistoryPanel(history: History, signal: AbortSignal) {
   let pointer: { x: number; y: number } | undefined;
   let keyboardX: number | undefined;
   fields.replaceChildren(); span.replaceChildren();
-  for (const seconds of timeSpans) span.add(new Option(`${seconds} s`, String(seconds)));
+  for (const seconds of timeSpans) span.add(new Option(`${i18n.number(seconds)} ${i18n.t('units.shortSeconds')}`, String(seconds)));
   span.value = '60';
   for (const metric of metrics) {
     const label = document.createElement('label'), input = document.createElement('input');
@@ -59,13 +69,14 @@ export function createHistoryPanel(history: History, signal: AbortSignal) {
     const line = document.createElement('span'); line.className = 'history-line';
     line.style.borderColor = metric.color; line.style.borderTopStyle = metric.dash.length ? 'dashed' : 'solid';
     line.setAttribute('aria-hidden', 'true');
-    label.append(input, line, metric.label); fields.append(label); inputs.set(metric.key, input);
+    const name = document.createElement('span'); name.dataset.i18n = metric.label; name.textContent = i18n.t(metric.label);
+    label.append(input, line, name); fields.append(label); inputs.set(metric.key, input);
     const group = document.createElement('div'), term = document.createElement('dt'), output = document.createElement('dd');
-    term.textContent = metric.unit === 'energy' ? `Σ ${metric.label}` : metric.label;
+    term.dataset.i18n = `tooltip.${metric.key}`; term.textContent = i18n.t(term.dataset.i18n);
     group.append(term, output); tooltipValues.append(group);
     output.dataset.metric = metric.key;
     outputs.set(metric.key, createNumber(output, metric.unit === 'count' ? 'integer' : 'decimal',
-      metricCharacters, metric.unit === 'count' ? metric.label.replace('Anzahl ', '') : 'Energie'));
+      metricCharacters, metric.label, i18n));
   }
   const hideTooltip = () => { pointer = undefined; keyboardX = undefined; tooltip.hidden = true; };
   const updateTooltip = () => {
@@ -103,7 +114,7 @@ export function createHistoryPanel(history: History, signal: AbortSignal) {
     if (canvas.width !== Math.round(width * ratio)) canvas.width = Math.round(width * ratio);
     if (canvas.height !== Math.round(height * ratio)) canvas.height = Math.round(height * ratio);
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    drawHistory(context, width, height, samples, mode.value as ChartMode, Number(span.value), selected);
+    drawHistory(context, width, height, samples, mode.value as ChartMode, Number(span.value), selected, i18n);
     updateTooltip();
     lastSample = latest;
   };
@@ -134,5 +145,9 @@ export function createHistoryPanel(history: History, signal: AbortSignal) {
   }, { signal });
   const observer = new ResizeObserver(redraw); observer.observe(host);
   signal.addEventListener('abort', () => { observer.disconnect(); tooltip.remove(); }, { once: true });
-  return { refresh };
+  return { refresh, localize() {
+    translateTooltipTime();
+    for (const option of span.options) option.textContent = `${i18n.number(Number(option.value))} ${i18n.t('units.shortSeconds')}`;
+    refresh(true);
+  } };
 }

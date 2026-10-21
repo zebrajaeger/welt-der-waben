@@ -34,14 +34,14 @@ describe('portable settings format', () => {
     expect(loaded).toEqual({ ...config, herbivore: { ...config.herbivore, initialEnergy: 16 }, carnivore: { ...config.carnivore, initialEnergy: 23 } });
     expect(JSON.parse(serializeSettings(loaded))).toEqual({ version: 2, config: loaded });
     expect(legacy.herbivore.initialEnergy).toBeUndefined();
-    expect(() => parseSettings(JSON.stringify({ version: 2, config: legacy }))).toThrow(/Startenergie/);
+    expect(() => parseSettings(JSON.stringify({ version: 2, config: legacy }))).toThrow(/initialEnergy/);
   });
 
   it('rejects invalid JSON, envelopes and unsupported versions', () => {
     for (const text of ['', '{', 'null', '[]', '2', '"settings"', '{}', JSON.stringify(defaultConfig), ...[0, 3, '2', null].map(version => JSON.stringify({ version, config: defaultConfig }))]) {
       expect(() => parseSettings(text)).toThrow();
     }
-    expect(() => parseSettings('{')).toThrow(/gültiges JSON/);
+    expect(() => parseSettings('{')).toThrow(/json/);
     expect(() => parseSettings('{"version":3}')).toThrow(/version/);
   });
 

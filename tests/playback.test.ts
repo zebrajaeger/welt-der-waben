@@ -57,7 +57,7 @@ describe('fixed tick playback', () => {
     const playback = new Playback(testState([]), testConfig);
     playback.tick(0);
     for (const value of [0, -1, NaN, Infinity]) {
-      expect(() => playback.setSpeedMultiplier(value, 1000)).toThrow(/Tempo/);
+      expect(() => playback.setSpeedMultiplier(value, 1000)).toThrow(/speedMultiplier/);
       expect(playback.state.tick).toBe(0);
     }
   });

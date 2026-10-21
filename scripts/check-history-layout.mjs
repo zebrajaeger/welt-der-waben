@@ -12,17 +12,21 @@ const server = await createServer({ root, configFile: false, base: '/', server: 
 let browser;
 const failures = [], errors = [], screenshots = [];
 const metricsOnly = process.argv.includes('--metrics-only');
+const locale = process.argv.includes('--english') ? 'en' : 'de';
 try {
   await server.listen();
   browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
+  const page = await browser.newPage({ locale: 'de-DE' });
   page.on('pageerror', error => errors.push(error.message));
   await page.route('**/__history-layout', route => route.fulfill({ contentType: 'text/html', body: html }));
   await page.goto(`http://127.0.0.1:${server.httpServer.address().port}/__history-layout`);
-  await page.evaluate(async () => {
+  await page.evaluate(async locale => {
     await import('/src/style.css');
     const { History } = await import('/src/history.ts');
     const { createHistoryPanel } = await import('/src/history-panel.ts');
+    const { createLocalization, translateDocument } = await import('/src/i18n.ts');
+    const i18n = createLocalization([locale]);
+    translateDocument(document, i18n);
     const history = new History();
     const context = document.querySelector('#history-canvas').getContext('2d');
     const fillText = context.fillText;
@@ -36,7 +40,7 @@ try {
       animals: Array.from({ length: 2 * count }, (_, i) => ({ id: i, species: i < count ? 'herbivore' : 'carnivore',
         energy: value / count, column: i, row: 0, angle: 0, readyAt: 0 })) });
     history.reset(state(9.99));
-    const panel = createHistoryPanel(history, new AbortController().signal);
+    const panel = createHistoryPanel(history, new AbortController().signal, i18n);
     document.querySelector('#history').open = true;
     for (const checkbox of document.querySelectorAll('#history-metrics input')) checkbox.checked = true;
     window.layoutFixture = (value, tick = 99, count = 9) => {
@@ -44,7 +48,7 @@ try {
     };
     document.querySelector('.history-extra')?.setAttribute('open', '');
     window.layoutFixture(9.99);
-  });
+  }, locale);
   const measure = () => page.evaluate(() => {
     const panel = document.querySelector('#history').getBoundingClientRect();
     const selectors = ['.history-chart'];
@@ -124,7 +128,7 @@ try {
       await page.evaluate(tick => window.layoutFixture(10, tick), tick);
       axis = await page.evaluate(() => window.layoutAxisLabels.slice(-5));
       assert.equal(axis.length, 5, 'Expected five time axis labels');
-      assert(axis.every(label => /,\d$/.test(label.text)), `Variable X-axis decimals: ${JSON.stringify(axis)}`);
+      assert(axis.every(label => (locale === 'de' ? /,\d$/ : /\.\d$/).test(label.text)), `Variable X-axis decimals: ${JSON.stringify(axis)}`);
       assert(axis.every(label => label.align === 'right' && /monospace/.test(label.font)), 'Time labels need a fixed decimal anchor');
       if (anchors) assert.deepEqual(axis.map(label => label.x), anchors, 'Time label anchors moved');
       anchors = axis.map(label => label.x);

@@ -114,13 +114,13 @@ Bei unveränderter Fenstergröße, Messreihenauswahl und Darstellungsart SHALL e
 - **AND** darf sich das Layout bei einer tatsächlichen Fensteränderung oder einer geänderten Messreihenauswahl weiterhin neu anordnen
 
 ### Requirement: Einheitliches Zahlenformat für aktuelle Messwerte
-Aktuelle Tierzahlen und Tickzahlen SHALL ganzzahlig erscheinen. Aktuelle Energie- und Sekundenangaben einschließlich des aufbewahrten Zeitraums SHALL im normalen Dezimalformat genau zwei Nachkommastellen und ein deutsches Dezimalkomma verwenden. Die Rundung SHALL ausschließlich die Textausgabe betreffen und die gespeicherten Messwerte erhalten.
+Aktuelle Tierzahlen und Tickzahlen SHALL ganzzahlig erscheinen. Aktuelle Energie- und Sekundenangaben einschließlich des aufbewahrten Zeitraums SHALL im normalen Dezimalformat genau zwei Nachkommastellen verwenden: Dezimalpunkt auf Englisch, Dezimalkomma auf Deutsch. Die Rundung SHALL ausschließlich die Textausgabe betreffen und die gespeicherten Messwerte erhalten.
 
 #### Scenario: Ganze und gebrochene Werte
 - **WHEN** 10 Tiere, eine Energiesumme von 10 und eine Simulationszeit von 10 Sekunden vorliegen
-- **THEN** erscheint die Tierzahl als „10“ und Energie sowie Zeit erscheinen als „10,00“
+- **THEN** erscheint die Tierzahl als „10“ und Energie sowie Zeit erscheinen auf Deutsch als „10,00“ und auf Englisch als „10.00“
 - **WHEN** anschließend Energie 10,5 und danach 10,56 angezeigt werden
-- **THEN** erscheinen „10,50“ und „10,56“ innerhalb desselben Zahlenfelds
+- **THEN** erscheinen „10,50“ und „10,56“ beziehungsweise „10.50“ und „10.56“ innerhalb desselben Zahlenfelds
 
 ### Requirement: Lange Zahlen ohne Layoutsprung
 Übersteigt eine Zahl die Kapazität ihres reservierten Feldes, SHALL sie darin in einer erkennbaren verkürzten Zahlenschreibweise dargestellt werden. Die vollständige, entsprechend der Anzeigepräzision formatierte Zahl SHALL zugänglich bleiben. Weder Abschneiden bedeutender Stellen noch Überdeckung anderer Angaben oder Vergrößerung des Feldes SHALL zulässig sein.
@@ -132,12 +132,12 @@ Aktuelle Tierzahlen und Tickzahlen SHALL ganzzahlig erscheinen. Aktuelle Energie
 - **AND** gilt dieselbe Layoutstabilität beim Zurückwechseln zu kleineren Werten
 
 ### Requirement: Stabile Nachkommastellen der X-Achse
-Die Zeitbeschriftungen der X-Achse SHALL in beiden Modi genau eine Nachkommastelle mit deutschem Komma, gleich breite Ziffern und eine feste rechte Ausrichtung verwenden. Wechsel zwischen ganzen und gebrochenen Sekunden SHALL den Nachkomma-Anker erhalten.
+Die Zeitbeschriftungen der X-Achse SHALL in beiden Modi genau eine Nachkommastelle mit dem Dezimalzeichen der gewählten Anwendungssprache, gleich breite Ziffern und eine feste rechte Ausrichtung verwenden. Wechsel zwischen ganzen und gebrochenen Sekunden SHALL den Nachkomma-Anker erhalten.
 
 #### Scenario: Ganze und gebrochene Achsenwerte
 - **WHEN** die X-Achse nacheinander ganze Sekunden und Zehntelsekunden beschriftet
-- **THEN** erscheinen beispielsweise „10,0“ und „10,1“ am selben Beschriftungsanker
-- **AND** bleibt der Nachkomma-Anker auch beim Wechsel von „9,9“ auf „10,0“ erhalten
+- **THEN** erscheinen auf Deutsch beispielsweise „10,0“ und „10,1“ und auf Englisch „10.0“ und „10.1“ am selben Beschriftungsanker
+- **AND** bleibt der Nachkomma-Anker auch beim Wechsel von „9,9“ auf „10,0“ beziehungsweise „9.9“ auf „10.0“ erhalten
 
 ### Requirement: Kompakte Standardansicht des Verlaufs
 Die Standardansicht SHALL keine dauerhafte Messwertzeile unter dem Diagramm belegen. Tickzahl, ausführlicher Zeitbereich und Erklärtexte SHALL in einem anfangs geschlossenen Unterbereich „Details“ zugänglich sein. Die Diagrammfläche SHALL 160 CSS-Pixel hoch sein; der Panelinhalt SHALL höchstens 320 CSS-Pixel beziehungsweise 38 Prozent der Fensterhöhe belegen und bei Bedarf intern scrollen.
@@ -162,4 +162,4 @@ Ein schwebendes Tooltip SHALL über der Zeichenfläche Zeit, Tick und alle fünf
 
 #### Scenario: Energiesummen erkennen
 - **WHEN** das Tooltip seine Messwerte anzeigt
-- **THEN** beginnen die drei Energiezeilen mit „Σ Energie“, gefolgt von Karnivoren, Grasfressern beziehungsweise Gras
+- **THEN** beginnen die drei Energiezeilen auf Deutsch mit „Σ Energie“ und auf Englisch mit „Σ Energy“, gefolgt von den jeweils übersetzten Bezeichnungen für Karnivoren, Grasfresser beziehungsweise Gras

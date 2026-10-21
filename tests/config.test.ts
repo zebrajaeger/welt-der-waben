@@ -19,8 +19,8 @@ describe('configuration', () => {
     expect(() => validateConfig(defaultConfig)).not.toThrow();
   });
   it('rejects crowding and parameters that let trapped grazers survive', () => {
-    expect(() => validateConfig({ ...defaultConfig, width: 1, height: 1 })).toThrow(/Startpopulation/);
-    expect(() => validateConfig({ ...defaultConfig, grassGrowthPerSecond: 2 })).toThrow(/Graswachstum/);
+    expect(() => validateConfig({ ...defaultConfig, width: 1, height: 1 })).toThrow(/population/);
+    expect(() => validateConfig({ ...defaultConfig, grassGrowthPerSecond: 2 })).toThrow(/growth/);
   });
   it('validates all numeric fields and their bounds', () => {
     for (const key of ['approachTicks', 'followTicks', 'waitTicks', 'swellTicks', 'divisionApproachTicks', 'divisionFollowTicks']) {
@@ -52,7 +52,7 @@ describe('configuration', () => {
       }
       expect(() => validateConfig({ ...defaultConfig, [kind]: { ...defaultConfig[kind], initialCount: 0.5 } })).toThrow();
     }
-    expect(() => validateConfig({ ...defaultConfig, grassGrowthPerSecond: 3 })).toThrow(/Graswachstum/);
+    expect(() => validateConfig({ ...defaultConfig, grassGrowthPerSecond: 3 })).toThrow(/growth/);
     expect(() => validateConfig({ ...defaultConfig, width: 5, height: 4 })).not.toThrow();
   });
   it('requires positive finite start energy no larger than the species maximum', () => {

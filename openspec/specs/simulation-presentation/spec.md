@@ -121,7 +121,7 @@ Pause SHALL Tickfortschritt und sämtliche sichtbaren Vorgänge einfrieren; Weit
 - **THEN** passen sich Spitzen und Kontaktpunkte an die neue Projektion an, ohne Aktionen neu zu beginnen
 
 ### Requirement: Tempoauswahl im Simulationsfenster
-Die mit „Tempo“ beschriftete Auswahl SHALL 0,25×, 0,5×, 1×, 2×, 4× und 8× anbieten. Bei 1× SHALL eine Realzeitsekunde einer Simulationssekunde mit 60 Ticks entsprechen. Ein abweichender konfigurierter Startfaktor SHALL zusätzlich angeboten werden. Auswahl und bestehende Bedienelemente SHALL per Tastatur, Zeigegerät und in schmalen Fenstern bedienbar bleiben.
+Die lokalisierte Tempoauswahl SHALL die Faktoren 0,25×, 0,5×, 1×, 2×, 4× und 8× im Zahlenformat der gewählten Sprache anbieten. Die Beschriftung SHALL auf Englisch „Speed“ und auf Deutsch „Tempo“ lauten. Bei 1× SHALL eine Realzeitsekunde 60 Simulationsticks entsprechen. Ein abweichender konfigurierter Startfaktor SHALL zusätzlich angeboten werden. Die Auswahl und bestehende Bedienelemente SHALL per Tastatur, Zeigegerät und in schmalen Fenstern bedienbar bleiben.
 
 #### Scenario: Standardstart und Auswahl
 - **WHEN** die Anwendung mit Standardkonfiguration startet
@@ -134,6 +134,11 @@ Die mit „Tempo“ beschriftete Auswahl SHALL 0,25×, 0,5×, 1×, 2×, 4× und 
 #### Scenario: Tastatur und kleines Fenster
 - **WHEN** die Auswahl per Tastatur oder auf einem schmalen Bildschirm bedient wird
 - **THEN** bleiben Beschriftung, Zeitfaktor und Wiedergabebedienelemente erreichbar und erkennbar
+
+#### Scenario: Sprachabhängige Tempowerte
+- **WHEN** die Auswahl auf Englisch beziehungsweise Deutsch angezeigt wird
+- **THEN** lauten Beschriftung und kleinster Faktor „Speed“ und „0.25×“ beziehungsweise „Tempo“ und „0,25×“
+- **AND** verwendet die Simulation in beiden Fällen denselben numerischen Faktor
 
 ### Requirement: Tempoänderung ohne Animationssprung
 Ein Tempowechsel SHALL ausschließlich die weitere Simulationszeit beschleunigen oder verlangsamen. Tick- und Aktionsfortschritte SHALL erhalten bleiben. Bewohner, Wachstum und Verbrauch SHALL denselben Zeitfaktor verwenden. Nach gleicher Tickzahl SHALL derselbe Anfangszustand mit derselben Zufallsfolge unabhängig vom Wiedergabetempo denselben Zustand ergeben.
@@ -269,14 +274,13 @@ Bei zu geringer Fensterhöhe SHALL die Seite vertikal scrollbar bleiben und eine
 - **AND** entstehen keine negativen oder ungültigen Zeichengrößen und kein horizontales Seitenscrolling
 
 ### Requirement: Direkt erreichbarer GitHub-Quellcode
-Die Oberfläche SHALL einen sichtbaren kompakten Link auf `https://github.com/zebrajaeger/welt-der-waben` anbieten. Er SHALL das Repository in einem neuen Tab öffnen und die Simulationsseite erhalten. Der Link SHALL ohne zusätzliche externe Ressourcen erkennbar, per Tastatur aktivierbar und mit sichtbarem Fokus sowie dem zugänglichen Namen „Quellcode auf GitHub (neuer Tab)“ versehen sein.
+Die Oberfläche SHALL einen sichtbaren kompakten Link auf `https://github.com/zebrajaeger/welt-der-waben` anbieten, der das Repository in einem neuen Tab öffnet und die Simulationsseite erhält. Er SHALL ohne zusätzliche externe Ressourcen erkennbar, per Tastatur aktivierbar und mit sichtbarem Fokus versehen sein. Sein zugänglicher Name SHALL lokalisiert sein: englisch „Source code on GitHub (new tab)“, deutsch „Quellcode auf GitHub (neuer Tab)“.
 
 #### Scenario: Quellcode öffnen
 - **WHEN** Benutzer den GitHub-Link mit Zeigegerät oder per Tastatur aktivieren
 - **THEN** öffnet sich das Repository in einem neuen Tab und die Simulationsseite bleibt geöffnet
 - **AND** werden weder Einstellungen übernommen oder gespeichert noch ein Neustart oder ein Wechsel des Pausenmodus ausgelöst
 - **AND** weist die zugängliche Beschriftung auf GitHub und den neuen Tab hin
-
 ### Requirement: Quellcode-Link ohne zusätzlichen vertikalen Platzbedarf
 Der Quellcode-Link SHALL in den vorhandenen Kopfbereich passen, ohne dessen Höhe zu erhöhen, eine zusätzliche Zeile zu erzeugen oder die Zeichenfläche zu verkleinern. Er SHALL Text, Bedienelemente und Spielfeld nicht überdecken. Bei breiten Fenstern und ab 360 CSS-Pixel Fensterbreite SHALL er sichtbar und erreichbar bleiben, ohne horizontales Seitenscrolling zu verursachen. Dies SHALL auch mit geöffneten Einstellungen gelten.
 

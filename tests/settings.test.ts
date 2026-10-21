@@ -16,9 +16,9 @@ describe('settings drafts', () => {
   });
   it('rejects empty, nonfinite, fractional and out of range inputs with field labels', () => {
     for (const input of ['', ' ', 'NaN', 'Infinity', 'abc', '0', '-1', '1.5']) {
-      expect(() => readSettings(path => path === 'width' ? input : String(settingValue(defaultConfig, path)))).toThrow(/Spalten/);
+      expect(() => readSettings(path => path === 'width' ? input : String(settingValue(defaultConfig, path)))).toThrow(/width/);
     }
-    expect(() => readSettings(path => path === 'herbivore.divisionFraction' ? '1' : String(settingValue(defaultConfig, path)))).toThrow(/Teilungsanteil/);
+    expect(() => readSettings(path => path === 'herbivore.divisionFraction' ? '1' : String(settingValue(defaultConfig, path)))).toThrow(/herbivore.divisionFraction/);
   });
   it('keeps domain constraints for drafts and stored data', () => {
     for (const config of [{ ...defaultConfig, width: 1, height: 1 }, { ...defaultConfig, grassGrowthPerSecond: 2 }]) {

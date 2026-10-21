@@ -1,7 +1,7 @@
 ﻿import { strict as assert } from 'node:assert';
 
 export async function checkPredation(page,browser,errors) {
-  const demo=await browser.newPage({viewport:{width:1200,height:1000}});
+  const demo=await browser.newPage({ locale: 'de-DE', viewport:{width:1200,height:1000}});
   demo.on('pageerror',e=>{console.error(e.stack);errors.push(e.message);});
   await demo.goto(new URL('/scripts/grass-division-demo.html',page.url()).href);
   await demo.getByRole('button',{name:'Übertragung',exact:true}).click();
