@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="actionlint">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/.browser-check/actionlint.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
