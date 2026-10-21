@@ -1,5 +1,49 @@
 import { expect, test } from '@playwright/test';
 
+test('serves a stable local SVG favicon under the Pages path', async ({ page }, testInfo) => {
+  await page.goto('./');
+  const icon = page.locator('head link[rel="icon"]');
+  await expect(icon).toHaveCount(1);
+  await expect(icon).toHaveAttribute('type', 'image/svg+xml');
+  await expect(icon).toHaveAttribute('sizes', 'any');
+  const href = await icon.getAttribute('href');
+  const url = new URL(href!, page.url());
+  expect(url.origin).toBe(new URL(page.url()).origin);
+  expect(url.pathname).toMatch(/^\/welt-der-waben\/assets\/favicon-[^/]+\.svg$/);
+  const response = await page.request.get(url.href);
+  expect(response.status()).toBe(200);
+  expect(response.headers()['content-type']).toMatch(/^image\/svg\+xml\b/);
+  expect(await response.text()).toContain('<svg');
+  expect(await page.evaluate(async url => {
+    const image = new Image(); image.src = url; await image.decode();
+    return image.naturalWidth > 0 && image.naturalHeight > 0;
+  }, url.href)).toBe(true);
+
+  // Neither language direction, playback nor reload changes this fixed motif.
+  await page.locator('#toggle').click();
+  await page.locator('#reset').click();
+  await page.locator('#language-toggle').click(); await page.locator('[data-language="ar"]').click();
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await expect(icon).toHaveAttribute('href', href!);
+  await page.reload(); await expect(icon).toHaveAttribute('href', href!);
+
+  // Inspect the actual production asset at tab sizes on both browser backgrounds.
+  await page.evaluate(async url => {
+    const preview = document.createElement('div'); preview.id = 'favicon-preview'; preview.dir = 'ltr';
+    preview.style.cssText = 'position:fixed;inset:20px auto auto 20px;z-index:1000;display:grid;grid-template-columns:repeat(3,140px);font:14px system-ui';
+    for (const background of ['#ffffff', '#101c1b']) for (const size of [16, 32, 48]) {
+      const cell = document.createElement('div');
+      cell.style.cssText = `background:${background};color:${background === '#ffffff' ? '#14251f' : '#e8f1df'};height:100px;display:flex;align-items:center;justify-content:center;gap:12px`;
+      const image = new Image(); image.src = url; image.width = image.height = size; await image.decode();
+      cell.append(image, `${size} px`); preview.append(cell);
+    }
+    document.body.append(preview);
+  }, url.href);
+  const path = testInfo.outputPath('favicon-sizes.png');
+  await page.locator('#favicon-preview').screenshot({ path });
+  await testInfo.attach('favicon-sizes', { path, contentType: 'image/png' });
+});
+
 test('production build loads its assets and preserves controls and settings under the Pages path', async ({ page, browser }, testInfo) => {
   const errors: string[] = [];
   const assets: { url: string; type: string; status: number; contentType: string }[] = [];

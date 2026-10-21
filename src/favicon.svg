@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <path d="M32 4 56.248711 18V46L32 60 7.751289 46V18Z" fill="#14251f" stroke="#64846f" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- render.ts drawAnimal/drawShape: energyFraction=0.5, fullness=8/15;
+       animation.ts starPoints: upward first tip, animal radius=0.73*28. -->
+  <path d="M32 11.56 36.720416 29.274667 49.701559 42.22 32 37.450667 14.298441 42.22 27.279584 29.274667Z" fill="#ff7b87"/>
+</svg>
